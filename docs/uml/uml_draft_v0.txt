@@ -1,0 +1,209 @@
+' copy this code into https://editor.plantuml.com/
+' for editing the UML diagram
+
+@startuml
+'interfaces
+interface SuggestionAlgorithm {
++ double getScore(Technology te)
+}
+
+'enums
+enum RuleLevel {
+ALLOW
+WARN
+BLOCK
+}
+
+enum LicenseType {
+  MIT
+  APACHE_2_0
+  GPL
+  BSD
+  PROPRIETARY
+}
+
+enum DbModelType {
+  RELATIONAL
+  DOCUMENT
+  KEY_VALUE
+  TIME_SERIES
+  GRAPH
+}
+
+enum RuntimeType {
+  JDK
+  NODE
+  DOTNET
+  PYTHON_RUNTIME
+}
+
+enum ProgrammingLanguage {
+  JAVA
+  KOTLIN
+  PYTHON
+  JAVASCRIPT
+  TYPESCRIPT
+  GO
+  RUST
+  CSHARP
+  PHP
+  RUBY
+  SWIFT
+  CPP
+}
+
+enum DeploymentPreference {
+  SELF_HOSTED
+  PAAS
+  CLOUD_NATIVE
+  SERVERLESS
+  KUBERNETES
+  ON_PREM
+  HYBRID
+}
+
+enum BudgetTier {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ArchitectureScope {
+  BACKEND_ONLY
+  FULL_STACK
+  FRONTEND_ONLY
+  MOBILE
+}
+
+'classes
+
+class Technology {
+- id: Long
+- name: String
+- description: String
+- license: LicenseType
+- tags: Set<Tag>
+- popularityScore: double
+- securityScore: double
+- maintainabilityScore: double
++ lastUpdated: Date
+}
+
+class Database {
+}
+
+class Frontend {
+}
+class Backend {
+}
+
+class MobileFramework {
+}
+
+class Advisor {
+- suggestionAlgorithm: SuggestionAlgorithm
++ suggestFramework(weightVector): List<Technologies>
+}
+
+class QuestionnaireResult {
+  - scope: ArchitectureScope
+  - wantsOpenSourceOnly: boolean
+  - budgetTier: BudgetTier
+  - deploymentPreference: DeploymentPreference
+  - expectedUsers: Long
+  - projectType: String
+  - mobileTarget: String
+  - dataVolume: String
+  - dataShape: String
+  - additionalNotes: String
+  --
+  + getBudgetTier(): BudgetTier
+}
+
+class TeamProfile {
+  - teamSize: int
+  - experienceLevel: String
+  - familiarLanguages: Set<ProgrammingLanguage>
+  - existingStackNotes: String
+}
+
+class PriorityRanking {
+  - rankByAspect: Map<PriorityAspect, Integer>  ' 1..N
+  - weightByAspect: Map<PriorityAspect, Double>
+  + computeWeightsFromRanks(): void
+  + getWeight(aspect: PriorityAspect): double
+}
+
+class RecommendationContext {
+  - questionnaireResult: QuestionnaireResult
+  - teamProfile: TeamProfile
+  - priorityRanking: PriorityRanking
+  --
+  + getQuestionnaire(): QuestionnaireResult
+  + getTeamProfile(): TeamProfile
+  + getPriorityRanking(): PriorityRanking
+}
+
+class QuestionnaireResultBuilder {
+
+}
+
+class Recommendation {
+- technology: Technology
+- score: double
+- warnings: List<String> 
+}
+
+
+class CompatibilityRule {
+  - id: Long
+  - sourceTech: Technology    ' optional
+  - sourceClass: Class        ' optional, e.g. BackendFramework.class
+  - targetTech: Technology    ' optional
+  - targetClass: Class        ' optional, e.g. DatabaseTech.class
+  - allowedTags: Set<String>
+  - blockedTags: Set<String>
+  - level: RuleLevel
+  - message: String
+}
+
+class WeightedAverageWithRoc {
+}
+
+class CompatibilityRule {
+  - id: Long
+  - source: Technology [0..1]
+  - target: Technology [0 .. 1]
+  - allowedTags: Set<String>
+  - blockedTags: Set<String>
+  - level: RuleLevel
+  - message: String
+}
+
+
+'relations
+CompatibilityRule --> Technology : sourceTech (0..1)
+CompatibilityRule --> Technology : targetTech (0..1)
+
+
+Technology <|.. Database
+Technology <|.. Frontend
+Technology <|.. Backend
+Technology <|.. MobileFramework
+
+
+RecommendationContext o-- QuestionnaireResult
+RecommendationContext o-- TeamProfile
+RecommendationContext o-- PriorityRanking
+
+TeamProfile --> ProgrammingLanguage : uses
+QuestionnaireResult --> BudgetTier
+QuestionnaireResult --> DeploymentPreference
+
+ConcreteQuestionnaireResultBuilder o--	 QuestionnaireResult
+SuggestionAlgorithm <|.. WeightedAverageWithRoc
+Technology o-- LicenseType
+
+Advisor o-- SuggestionAlgorithm
+
+@enduml
