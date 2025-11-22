@@ -25,24 +25,22 @@ class TechnologyRepositoryTest {
 
     @Test
     void shouldSaveAndLoadTechnology() {
-        TechnologyEntity saved = repo.save(
+        TechnologyEntity backendEntity =
                 new TechnologyEntity(
                         "Spring Boot",
                         TechnologyKind.BACKEND,
-                        RuntimeType.JDK,
-                        ProgrammingLanguage.JAVA,
                         Instant.now(),
                         "backend,java,spring",
                         "https://github.com/spring-projects/spring-boot",
                         "https://docs.spring.io/spring-boot/",
-                        LicenseType.APACHE_2_0)
-        );
-
-
+                        LicenseType.APACHE_2_0);
+        backendEntity.setRuntime(RuntimeType.JDK);
+        backendEntity.setLanguage(ProgrammingLanguage.JAVA);
+        TechnologyEntity savedBackEnd = repo.save(backendEntity);
         List<TechnologyEntity> all = repo.findAll();
-
         assertFalse(all.isEmpty());
-        assertEquals("Spring Boot", all.get(0).getName());
+        assertEquals("Spring Boot", all.getFirst().getName());
+        assertEquals(ProgrammingLanguage.JAVA, all.getFirst().getLanguage());
     }
 
 }
