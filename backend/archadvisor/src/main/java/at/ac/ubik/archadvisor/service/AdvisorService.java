@@ -3,6 +3,7 @@ package at.ac.ubik.archadvisor.service;
 import at.ac.ubik.archadvisor.domain.*;
 import at.ac.ubik.archadvisor.domain.enums.ArchitectureScope;
 import at.ac.ubik.archadvisor.domain.enums.LicenseType;
+import at.ac.ubik.archadvisor.infrastructure.persistence.repository.TechnologyRepository;
 import at.ac.ubik.archadvisor.recommendation.ISuggestionAlgorithm;
 import org.springframework.stereotype.Service;
 
@@ -13,16 +14,23 @@ import java.util.function.Predicate;
 @Service
 public class AdvisorService {
 
-    // TODO: later use repository for TechnologyEntity here
-    private final List<Technology> catalog;
 
+    private final TechnologyRepository technologyRepository;
     private final ISuggestionAlgorithm algorithm;
-
+    private final TechnologyMapper mapper;
 
     //TODO: Inject Technology repository
-    public AdvisorService(ISuggestionAlgorithm algorithm, List<Technology> catalog) {
+    public AdvisorService(TechnologyRepository technologyRepository, ISuggestionAlgorithm algorithm, TechnologyMapper technologyMapper) {
+        this.technologyRepository = technologyRepository;
         this.algorithm = algorithm;
-        this.catalog = catalog;
+        this.mapper = technologyMapper;
+    }
+
+    private List<Technology> loadCatalog() {
+        return technologyRepository.findAll()
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 
 
@@ -76,7 +84,7 @@ public class AdvisorService {
     ) {
         Predicate<? super T> effectiveFilter =
                 extraFilter != null ? extraFilter : t -> true;
-
+        List<Technology> catalog = loadCatalog();
         return catalog.stream()
                 .filter(type::isInstance)
                 .map(type::cast)
