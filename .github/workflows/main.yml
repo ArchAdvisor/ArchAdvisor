@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  backend:
+    name: Backend - Maven tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend/archadvisor
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Run Maven tests
+        run: mvn -B test
+
+      # Optionally also build the JAR (if you want)
+      # - name: Build with Maven
+      #   run: mvn -B package
