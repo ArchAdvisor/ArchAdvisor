@@ -5,6 +5,8 @@ import at.ac.ubik.archadvisor.domain.PriorityRanking;
 import at.ac.ubik.archadvisor.domain.RecommendationContext;
 import at.ac.ubik.archadvisor.domain.enums.LicenseType;
 import at.ac.ubik.archadvisor.domain.enums.PriorityAspect;
+import at.ac.ubik.archadvisor.domain.enums.ProgrammingLanguage;
+import at.ac.ubik.archadvisor.domain.enums.RuntimeType;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -22,12 +24,12 @@ class PriorityWeightedAlgorithmTest {
 
     @Test
     void getScore() {
-        FrontendFramework react = new FrontendFramework(1L, "react", "test-descp", LicenseType.APACHE_2_0, new HashSet<>(), "test/url", "test/url", Instant.now());
+        FrontendFramework react = new FrontendFramework(1L, "react", "test-descp", LicenseType.APACHE_2_0, new HashSet<>(), "test/url", "test/url", Instant.now(), ProgrammingLanguage.JAVASCRIPT, RuntimeType.NODE, true);
         react.setValueOfMetricScore(PriorityAspect.PERFORMANCE, 0.8);
         react.setValueOfMetricScore(PriorityAspect.SCALABILITY, 0.6);
         react.setValueOfMetricScore(PriorityAspect.COST_EFFECTIVENESS, 0.4);
 
-        FrontendFramework angular = new FrontendFramework(2L, "angular", "test-descp", LicenseType.APACHE_2_0, new HashSet<>(), "test/url", "test/url", Instant.now());
+        FrontendFramework angular = new FrontendFramework(2L, "angular", "test-descp", LicenseType.APACHE_2_0, new HashSet<>(), "test/url", "test/url", Instant.now(), ProgrammingLanguage.TYPESCRIPT, RuntimeType.NODE, true);
         angular.setValueOfMetricScore(PriorityAspect.PERFORMANCE, 0.6);
         angular.setValueOfMetricScore(PriorityAspect.SCALABILITY, 0.8);
         angular.setValueOfMetricScore(PriorityAspect.COST_EFFECTIVENESS, 0.7);

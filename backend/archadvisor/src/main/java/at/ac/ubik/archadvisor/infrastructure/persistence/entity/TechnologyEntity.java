@@ -44,6 +44,14 @@ public class TechnologyEntity {
     protected TechnologyEntity() {
     }
 
+    public boolean isSupportsSSR() {
+        return supportsSSR;
+    }
+
+    public void setSupportsSSR(boolean supportsSSR) {
+        this.supportsSSR = supportsSSR;
+    }
+
     /**
      * General base constructor for all technology types
      **/
@@ -191,6 +199,10 @@ public class TechnologyEntity {
 
     public String getName() {
         return name;
+    }
+
+    public MobilePlatform getMobilePlatform() {
+        return mobilePlatform;
     }
 }
 

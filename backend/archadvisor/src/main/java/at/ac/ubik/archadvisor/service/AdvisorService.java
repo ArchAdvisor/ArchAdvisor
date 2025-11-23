@@ -4,6 +4,7 @@ import at.ac.ubik.archadvisor.domain.*;
 import at.ac.ubik.archadvisor.domain.enums.ArchitectureScope;
 import at.ac.ubik.archadvisor.domain.enums.LicenseType;
 import at.ac.ubik.archadvisor.infrastructure.persistence.repository.TechnologyRepository;
+import at.ac.ubik.archadvisor.mapper.TechnologyMapper;
 import at.ac.ubik.archadvisor.recommendation.ISuggestionAlgorithm;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,6 @@ public class AdvisorService {
     private final ISuggestionAlgorithm algorithm;
     private final TechnologyMapper mapper;
 
-    //TODO: Inject Technology repository
     public AdvisorService(TechnologyRepository technologyRepository, ISuggestionAlgorithm algorithm, TechnologyMapper technologyMapper) {
         this.technologyRepository = technologyRepository;
         this.algorithm = algorithm;
@@ -47,7 +47,7 @@ public class AdvisorService {
                         ctx,
                         numberOfCandidates,
                         (tech) -> filterByTechnicalProfile(tech, ctx));
-                return RecommendationResult.backendOnly(backendRecommendations);
+                return RecommendationResult.backendOnly(scope, backendRecommendations);
             case FULL_STACK:
                 backendRecommendations = getTopNRecommendations(
                         BackendFramework.class,
@@ -64,13 +64,13 @@ public class AdvisorService {
                         ctx,
                         numberOfCandidates, (tech) -> filterByTechnicalProfile(tech, ctx));
 
-                return RecommendationResult.fullStack(backendRecommendations, frontRecommendations, databaseRecommendations);
+                return RecommendationResult.fullStack(scope, backendRecommendations, frontRecommendations, databaseRecommendations);
             case MOBILE:
                 mobileFrameworkRecommendations = getTopNRecommendations(
                         MobileFramework.class,
                         ctx,
                         numberOfCandidates, (tech) -> filterByTechnicalProfile(tech, ctx));
-                return RecommendationResult.mobileOnly(mobileFrameworkRecommendations);
+                return RecommendationResult.mobileOnly(scope, mobileFrameworkRecommendations);
             default:
                 throw new IllegalArgumentException("Unknown scope");
         }
