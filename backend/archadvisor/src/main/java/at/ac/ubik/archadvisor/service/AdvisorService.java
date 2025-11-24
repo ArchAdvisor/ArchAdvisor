@@ -95,7 +95,7 @@ public class AdvisorService {
                 .toList();
     }
 
-    private boolean filterByTechnicalProfile(Technology tech, RecommendationContext ctx) {
+    public boolean filterByTechnicalProfile(Technology tech, RecommendationContext ctx) {
         TechnicalProfile technicalProfile = ctx.getTechnicalProfile();
 
         if (technicalProfile.isWantsOpenSourceOnly() &&

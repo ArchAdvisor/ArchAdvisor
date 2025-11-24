@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -218,7 +218,7 @@ class AdvisorServiceTest {
     }
 
     @Test
-    void testAdvisorService() {
+    void suggest_Returns2Recommendations_WhenCalledWith2NumberOfCandidatesBackendOnly() {
         TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, 100L);
         TeamProfile teamProfile = new TeamProfile(1, "Beginner", new HashSet<>());
         HashMap<PriorityAspect, Integer> priorities = new HashMap<>();
@@ -232,5 +232,74 @@ class AdvisorServiceTest {
         assertEquals(ArchitectureScope.BACKEND_ONLY, recommendationResult.architectureScope());
         assertEquals(2, recommendationResult.backends().toArray().length);
     }
+
+    @Test
+    void suggest_Returns1Recommendations_WhenCalledWith1NumberOfCandidatesBackendOnly() {
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, 100L);
+        TeamProfile teamProfile = new TeamProfile(1, "Beginner", new HashSet<>());
+        HashMap<PriorityAspect, Integer> priorities = new HashMap<>();
+        priorities.put(PriorityAspect.PERFORMANCE, 1);
+        priorities.put(PriorityAspect.SCALABILITY, 2);
+        priorities.put(PriorityAspect.COST_EFFECTIVENESS, 3);
+        PriorityRanking priorityRanking = new PriorityRanking(priorities);
+        RecommendationContext recommendation = new RecommendationContext(technicalProfile, teamProfile, priorityRanking);
+
+        RecommendationResult recommendationResult = advisorService.suggest(recommendation, 1);
+        assertEquals(ArchitectureScope.BACKEND_ONLY, recommendationResult.architectureScope());
+        assertEquals(1, recommendationResult.backends().toArray().length);
+    }
+
+    @Test
+    void suggest_Returns2Recommendations_WhenCalledWith2NumberOfCandidatesFullStack() {
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.FULL_STACK, true, null, null, 100L);
+        TeamProfile teamProfile = new TeamProfile(1, "Beginner", new HashSet<>());
+        HashMap<PriorityAspect, Integer> priorities = new HashMap<>();
+        priorities.put(PriorityAspect.PERFORMANCE, 1);
+        priorities.put(PriorityAspect.SCALABILITY, 2);
+        priorities.put(PriorityAspect.COST_EFFECTIVENESS, 3);
+        PriorityRanking priorityRanking = new PriorityRanking(priorities);
+        RecommendationContext recommendation = new RecommendationContext(technicalProfile, teamProfile, priorityRanking);
+
+        RecommendationResult recommendationResult = advisorService.suggest(recommendation, 2);
+        assertEquals(ArchitectureScope.FULL_STACK, recommendationResult.architectureScope());
+        assertEquals(2, recommendationResult.backends().toArray().length);
+        assertEquals(2, recommendationResult.frontends().toArray().length);
+        assertEquals(2, recommendationResult.databases().toArray().length);
+    }
+
+    @Test
+    void suggest_Returns2Recommendations_WhenCalledWith2NumberOfCandidatesMobile() {
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.MOBILE, true, null, null, 100L);
+        TeamProfile teamProfile = new TeamProfile(1, "Beginner", new HashSet<>());
+        HashMap<PriorityAspect, Integer> priorities = new HashMap<>();
+        priorities.put(PriorityAspect.PERFORMANCE, 1);
+        priorities.put(PriorityAspect.SCALABILITY, 2);
+        priorities.put(PriorityAspect.COST_EFFECTIVENESS, 3);
+        PriorityRanking priorityRanking = new PriorityRanking(priorities);
+        RecommendationContext recommendation = new RecommendationContext(technicalProfile, teamProfile, priorityRanking);
+
+        RecommendationResult recommendationResult = advisorService.suggest(recommendation, 2);
+        assertEquals(ArchitectureScope.MOBILE, recommendationResult.architectureScope());
+        assertEquals(2, recommendationResult.mobileFrameworks().toArray().length);
+    }
+
+    @Test
+    void filterByTechnicalProfile_ReturnsFalse_WhenIsOpenSourceAndTechnologyIsProprietary() {
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, 100L);
+        FrontendFramework sencha = new FrontendFramework(1L, "Sencha Ext JS", "test-descp", LicenseType.PROPRIETARY, new HashSet<>(), "test/url", "test/url", Instant.now(), ProgrammingLanguage.JAVASCRIPT, RuntimeType.NODE, true);
+        RecommendationContext recommendation = new RecommendationContext(technicalProfile, null, null);
+        boolean isAccepted = advisorService.filterByTechnicalProfile(sencha, recommendation);
+        assertFalse(isAccepted);
+    }
+
+    @Test
+    void filterByTechnicalProfile_ReturnsTrue_WhenIsOpenSourceAndTechnologyIsOpenSource() {
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, 100L);
+        FrontendFramework react = new FrontendFramework(1L, "Sencha Ext JS", "test-descp", LicenseType.OPEN_SOURCE, new HashSet<>(), "test/url", "test/url", Instant.now(), ProgrammingLanguage.JAVASCRIPT, RuntimeType.NODE, true);
+        RecommendationContext recommendation = new RecommendationContext(technicalProfile, null, null);
+        boolean isAccepted = advisorService.filterByTechnicalProfile(react, recommendation);
+        assertTrue(isAccepted);
+    }
+
 
 }
