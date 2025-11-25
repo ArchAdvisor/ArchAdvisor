@@ -1,3 +1,3 @@
 package at.ac.ubik.archadvisor.domain.enums;
 
-public enum RuleLevel {ALLOW, WARN, BLOCK}
+public enum RuleLevel {WARN, BLOCK}
