@@ -30,16 +30,16 @@ public class TechnologyEntity {
     private String documentationUrl;
     private String description;
     private Instant lastUpdated;
-    private boolean serverlessFriendly;
-    private boolean supportsSSR;
-    private double performanceScore;
-    private double scalabilityScore;
-    private double maintainabilityScore;
-    private double securityScore;
-    private double costEffectivenessScore;
-    private double communitySupportScore;
-    private double ecosystemMaturityScore;
-    private double vendorLockinScore;
+    private Boolean serverlessFriendly;
+    private Boolean supportsSSR;
+    private Double performanceScore;
+    private Double scalabilityScore;
+    private Double maintainabilityScore;
+    private Double securityScore;
+    private Double costEffectivenessScore;
+    private Double communitySupportScore;
+    private Double ecosystemMaturityScore;
+    private Double vendorLockinScore;
 
     protected TechnologyEntity() {
     }
