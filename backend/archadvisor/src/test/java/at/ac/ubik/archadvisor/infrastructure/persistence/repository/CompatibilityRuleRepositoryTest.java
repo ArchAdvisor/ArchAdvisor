@@ -24,6 +24,8 @@ class CompatibilityRuleRepositoryTest {
     @Autowired
     private CompatibilityRuleRepository compatibilityRuleRepository;
 
+    private TechnologyEntity tech1;
+    private TechnologyEntity tech2;
 
     @BeforeEach
     void setUpRepository() {
@@ -49,7 +51,7 @@ class CompatibilityRuleRepositoryTest {
         backend_one.setCommunitySupportScore(0.95);
         backend_one.setEcosystemMaturityScore(0.98);
         backend_one.setVendorLockinScore(0.10);
-        technologyRepository.save(backend_one);
+        tech1 = technologyRepository.save(backend_one);
 
         TechnologyEntity backend_two = new TechnologyEntity(
                 "Express.js",
@@ -72,7 +74,7 @@ class CompatibilityRuleRepositoryTest {
         backend_two.setCommunitySupportScore(0.88);
         backend_two.setEcosystemMaturityScore(0.90);
         backend_two.setVendorLockinScore(0.05);
-        technologyRepository.save(backend_two);
+        tech2 = technologyRepository.save(backend_two);
 
 
         TechnologyEntity frontend_one = new TechnologyEntity(
@@ -215,15 +217,18 @@ class CompatibilityRuleRepositoryTest {
 
     @Test
     void ensureCorrectOrderWhenSavingCompatibilityEntity() throws Exception {
-        Optional<TechnologyEntity> technologyEntityWithSmallerId = technologyRepository.findById(1L);
-        Optional<TechnologyEntity> technologyEntityWithHigherId = technologyRepository.findById(2L);
+        Long smallerId = Math.min(tech1.getId(), tech2.getId());
+        Long higherId = Math.max(tech1.getId(), tech2.getId());
+
+        Optional<TechnologyEntity> technologyEntityWithSmallerId = technologyRepository.findById(smallerId);
+        Optional<TechnologyEntity> technologyEntityWithHigherId = technologyRepository.findById(higherId);
         if (technologyEntityWithSmallerId.isPresent() && technologyEntityWithHigherId.isPresent()) {
             CompatibilityRuleEntity compatibilityRuleEntity = CompatibilityRuleEntity.of(technologyEntityWithHigherId.get(), technologyEntityWithSmallerId.get(), "Not compatibile", RuleLevel.BLOCK);
             compatibilityRuleRepository.save(compatibilityRuleEntity);
             compatibilityRuleEntity = compatibilityRuleRepository.findAll().getFirst();
 
-            assertEquals(1L, compatibilityRuleEntity.getSourceTechnology().getId());
-            assertEquals(2L, compatibilityRuleEntity.getTargetTechnology().getId());
+            assertEquals(smallerId, compatibilityRuleEntity.getSourceTechnology().getId());
+            assertEquals(higherId, compatibilityRuleEntity.getTargetTechnology().getId());
         } else {
             throw new Exception("One of the technologies is not present");
         }
