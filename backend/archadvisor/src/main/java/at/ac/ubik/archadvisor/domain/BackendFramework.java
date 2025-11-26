@@ -12,8 +12,11 @@ public class BackendFramework extends Technology {
     private RuntimeType runtimeType;
     private boolean serverlessFriendly;
 
-    protected BackendFramework(Long id, String name, String description, LicenseType license, Set<String> tags, String githubUrl, String documentation, Instant lastUpdated) {
+    public BackendFramework(Long id, String name, String description, LicenseType license, Set<String> tags, String githubUrl, String documentation, Instant lastUpdated, ProgrammingLanguage programmingLanguage, RuntimeType runtimeType, boolean serverlessFriendly) {
         super(id, name, description, license, tags, githubUrl, documentation, lastUpdated);
+        this.programmingLanguage = programmingLanguage;
+        this.runtimeType = runtimeType;
+        this.serverlessFriendly = serverlessFriendly;
     }
 
     public ProgrammingLanguage getProgrammingLanguage() {

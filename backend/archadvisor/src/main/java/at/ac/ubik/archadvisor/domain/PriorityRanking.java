@@ -7,8 +7,8 @@ import java.util.Map;
 
 public final class PriorityRanking {
     //Aspect, ranking from 1 to N
-    //e.g. Performance, 1
-    private final HashMap<PriorityAspect, Integer> rankedPriorityAspects;   // 1..N
+    //e.g. (Performance, 1)
+    private final HashMap<PriorityAspect, Integer> rankedPriorityAspects;
     private final HashMap<PriorityAspect, Double> weightOfPriorityAspects;
 
     public PriorityRanking(HashMap<PriorityAspect, Integer> rankByAspect) {
