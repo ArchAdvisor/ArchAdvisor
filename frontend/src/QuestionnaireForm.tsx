@@ -23,6 +23,12 @@ const DeploymentPreferences = {
     HYBRID: 6 as const,
 };
 
+const BudgetTier = {
+    LOW: 0 as const,
+    MEDIUM: 1 as const,
+    HIGH: 2 as const,
+};
+
 const PriorityAspects = {
     PERFORMANCE: 0 as const,
     SCALABILITY: 1 as const,
@@ -34,17 +40,31 @@ const PriorityAspects = {
     VENDOR_LOCKIN_AVOIDANCE: 7 as const,
 }
 
+const PRIORITY_ASPECT_LABELS: Record<PriorityAspects, string> = {
+    [PriorityAspects.PERFORMANCE]: "Performance",
+    [PriorityAspects.SCALABILITY]: "Scalability",
+    [PriorityAspects.MAINTAINABILITY]: "Maintainability",
+    [PriorityAspects.SECURITY]: "Security",
+    [PriorityAspects.COST_EFFECTIVENESS]: "Cost-effectiveness",
+    [PriorityAspects.COMMUNITY_SUPPORT]: "Community support",
+    [PriorityAspects.ECOSYSTEM_MATURITY]: "Ecosystem maturity",
+    [PriorityAspects.VENDOR_LOCKIN_AVOIDANCE]: "Vendor lock-in avoidance",
+};
+
 
 
 type ArchitectureScope = typeof ArchitectureScope[keyof typeof ArchitectureScope];
 type DeploymentPreferences = typeof DeploymentPreferences[keyof typeof DeploymentPreferences];
 type ProgrammingLanguages = typeof ProgrammingLanguages[keyof typeof ProgrammingLanguages];
 type PriorityAspects = typeof PriorityAspects[keyof typeof PriorityAspects];
+type BudgetTier = typeof BudgetTier[keyof typeof BudgetTier];
 
 type QuestionnaireRequest = {
     architectureScope: ArchitectureScope | null;
-    isOpenSource: boolean;
     deploymentPreference: DeploymentPreferences | null;
+    //only when deployment == CLOUD TODO
+    budgetTier: BudgetTier | null;
+    isOpenSource: boolean;
     expectedUsers: number | null;
     teamSize: number;
     experienceLevel: string;
@@ -60,12 +80,22 @@ type QuestionnaireResponse = {
 function QuestionnaireForm() {
     const [form, setForm] = useState<QuestionnaireRequest>({
         architectureScope: null,
+        budgetTier: null,
         isOpenSource: false,
         deploymentPreference: null,
         expectedUsers: null,
         teamSize: 0,
         experienceLevel: "",
-        priorityAspects: [],
+        priorityAspects: [
+            PriorityAspects.PERFORMANCE,
+            PriorityAspects.SCALABILITY,
+            PriorityAspects.MAINTAINABILITY,
+            PriorityAspects.SECURITY,
+            PriorityAspects.COST_EFFECTIVENESS,
+            PriorityAspects.COMMUNITY_SUPPORT,
+            PriorityAspects.ECOSYSTEM_MATURITY,
+            PriorityAspects.VENDOR_LOCKIN_AVOIDANCE,
+        ],
         teamProgrammingLanguages: [],
     });
 
@@ -91,6 +121,24 @@ function QuestionnaireForm() {
             }
         });
     };
+    const moveAspect = (index: number, direction: -1 | 1) => {
+        setForm(prev => {
+            const arr = [...prev.priorityAspects];
+            const newIndex = index + direction;
+
+            if (newIndex < 0 || newIndex >= arr.length) {
+                return prev; // out of bounds, no change
+            }
+
+            // swap positions
+            const temp = arr[index];
+            arr[index] = arr[newIndex];
+            arr[newIndex] = temp;
+
+            return { ...prev, priorityAspects: arr };
+        });
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -190,6 +238,27 @@ function QuestionnaireForm() {
                         </select>
                     </label>
                 </div>
+                {/* BudgetTier */}
+                <div style={{ marginBottom: "1rem" }}>
+                    <label>
+                        Which budgetTier are you planning to use?:
+                        <select
+                            value={form.architectureScope ?? ""}
+                            onChange={(e) =>
+                                setForm({
+                                    ...form,
+                                    budgetTier: e.target.value === "" ? null : Number(e.target.value),
+                                })
+                            }
+                            style={{ marginLeft: "0.5rem", width: "100%" }}
+                        >
+                            <option value="">Select an option</option>
+                            <option value={BudgetTier.LOW}>Low</option>
+                            <option value={BudgetTier.MEDIUM}>Medium</option>
+                            <option value={BudgetTier.HIGH}>High</option>
+                        </select>
+                    </label>
+                </div>
                 {/*Number of expected users*/}
                 <div style={{ marginBottom: "1rem" }}>
                     <label>
@@ -282,6 +351,36 @@ function QuestionnaireForm() {
                         C#
                     </label>
                 </div>
+                {/* Priority Aspects Ranking */}
+                <div style={{ marginBottom: "1rem" }}>
+                    <p>Rank the aspects by priority (top = most important):</p>
+
+                    <ol>
+                        {form.priorityAspects.map((aspect, idx) => (
+                            <li key={aspect} style={{ marginBottom: "0.5rem" }}>
+                                {PRIORITY_ASPECT_LABELS[aspect]}
+                                <span style={{ marginLeft: "0.5rem" }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => moveAspect(idx, -1)}
+                                        disabled={idx === 0}
+                                        style={{ marginRight: "0.25rem" }}
+                                    >
+                                        ↑
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => moveAspect(idx, 1)}
+                                        disabled={idx === form.priorityAspects.length - 1}
+                                    >
+                                        ↓
+                                    </button>
+                                </span>
+                            </li>
+                        ))}
+                    </ol>
+                </div>
+
                 <button type="submit" disabled={loading}>
                     {loading ? "Sending..." : "Submit"}
                 </button>
