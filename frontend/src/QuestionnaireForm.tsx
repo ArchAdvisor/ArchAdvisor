@@ -1,44 +1,44 @@
-import { FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
 
 const ArchitectureScope = {
-    BACKEND_ONLY: 0 as const,
-    FULL_STACK: 1 as const,
-    MOBILE: 2 as const,
-};
+    BACKEND_ONLY: "BACKEND_ONLY",
+    FULL_STACK: "FULL_STACK",
+    MOBILE: "MOBILE",
+} as const;
 
 const ProgrammingLanguages = {
-    JAVASCRIPT: 0 as const,
-    PYTHON: 1 as const,
-    JAVA: 2 as const,
-    CSHARP: 3 as const,
-};
+    JAVASCRIPT: "JAVASCRIPT",
+    PYTHON: "PYTHON",
+    JAVA: "JAVA",
+    CSHARP: "CSHARP",
+} as const;
 
 const DeploymentPreferences = {
-    SELF_HOSTED: 0 as const,
-    PAAS: 1 as const,
-    CLOUD_NATIVE: 2 as const,
-    SERVERLESS: 3 as const,
-    KUBERNETES: 4 as const,
-    ON_PREM: 5 as const,
-    HYBRID: 6 as const,
-};
+    SELF_HOSTED: "SELF_HOSTED",
+    PAAS: "PAAS",
+    CLOUD_NATIVE: "CLOUD_NATIVE",
+    SERVERLESS: "SERVERLESS",
+    KUBERNETES: "KUBERNETES",
+    ON_PREM: "ON_PREM",
+    HYBRID: "HYBRID",
+} as const;
 
 const BudgetTier = {
-    LOW: 0 as const,
-    MEDIUM: 1 as const,
-    HIGH: 2 as const,
-};
+    LOW: "LOW",
+    MEDIUM: "MEDIUM",
+    HIGH: "HIGH",
+} as const;
 
 const PriorityAspects = {
-    PERFORMANCE: 0 as const,
-    SCALABILITY: 1 as const,
-    MAINTAINABILITY: 2 as const,
-    SECURITY: 3 as const,
-    COST_EFFECTIVENESS: 4 as const,
-    COMMUNITY_SUPPORT: 5 as const,
-    ECOSYSTEM_MATURITY: 6 as const,
-    VENDOR_LOCKIN_AVOIDANCE: 7 as const,
-}
+    PERFORMANCE: "PERFORMANCE",
+    SCALABILITY: "SCALABILITY",
+    MAINTAINABILITY: "MAINTAINABILITY",
+    SECURITY: "SECURITY",
+    COST_EFFECTIVENESS: "COST_EFFECTIVENESS",
+    COMMUNITY_SUPPORT: "COMMUNITY_SUPPORT",
+    ECOSYSTEM_MATURITY: "ECOSYSTEM_MATURITY",
+    VENDOR_LOCKIN_AVOIDANCE: "VENDOR_LOCKIN_AVOIDANCE",
+} as const;
 
 const PRIORITY_ASPECT_LABELS: Record<PriorityAspects, string> = {
     [PriorityAspects.PERFORMANCE]: "Performance",
@@ -106,21 +106,11 @@ function QuestionnaireForm() {
     const toggleLanguage = (lang: ProgrammingLanguages) => {
         setForm(prev => {
             const selected = prev.teamProgrammingLanguages;
-            if (selected.includes(lang)) {
-                // remove if already selected
-                return {
-                    ...prev,
-                    teamProgrammingLanguages: selected.filter(l => l !== lang),
-                };
-            } else {
-                // add if not yet selected
-                return {
-                    ...prev,
-                    teamProgrammingLanguages: [...selected, lang],
-                };
-            }
+            return selected.includes(lang)
+                ? { ...prev, teamProgrammingLanguages: selected.filter(l => l !== lang) }
+                : { ...prev, teamProgrammingLanguages: [...selected, lang] };
         });
-    };
+    }
     const moveAspect = (index: number, direction: -1 | 1) => {
         setForm(prev => {
             const arr = [...prev.priorityAspects];
@@ -146,17 +136,24 @@ function QuestionnaireForm() {
         setResult(null);
 
         try {
+            var body = JSON.stringify({
+                scope: form.architectureScope,
+                isOpenSource: form.isOpenSource,
+                deploymentPreferences: form.deploymentPreference,
+                budgetTier: form.budgetTier,
+                expectedNumberOfUsers: form.expectedUsers,
+                teamSize: form.teamSize,
+                experienceLevel: form.experienceLevel,
+                programmingLanguages: form.teamProgrammingLanguages,
+                priorityAspects: form.priorityAspects
+            });
+            console.log(body)
             const response = await fetch("/api/questionnaire", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    name: form.name,
-                    age: form.age === "" ? null : Number(form.age),
-                    likesIdea: form.likesIdea,
-                    feedback: form.feedback,
-                }),
+                body: body,
             });
 
             if (!response.ok) {
@@ -187,7 +184,7 @@ function QuestionnaireForm() {
                             onChange={(e) =>
                                 setForm({
                                     ...form,
-                                    architectureScope: e.target.value === "" ? null : Number(e.target.value),
+                                    architectureScope: e.target.value === "" ? null : (e.target.value as ArchitectureScope),
                                 })
                             }
                             style={{ marginLeft: "0.5rem", width: "100%" }}
@@ -222,7 +219,7 @@ function QuestionnaireForm() {
                             onChange={(e) =>
                                 setForm({
                                     ...form,
-                                    deploymentPreference: e.target.value === "" ? null : Number(e.target.value),
+                                    deploymentPreference: e.target.value === "" ? null : (e.target.value as DeploymentPreferences),
                                 })
                             }
                             style={{ marginLeft: "0.5rem", width: "100%" }}
@@ -247,7 +244,7 @@ function QuestionnaireForm() {
                             onChange={(e) =>
                                 setForm({
                                     ...form,
-                                    budgetTier: e.target.value === "" ? null : Number(e.target.value),
+                                    budgetTier: e.target.value === "" ? null : (e.target.value as BudgetTier),
                                 })
                             }
                             style={{ marginLeft: "0.5rem", width: "100%" }}
