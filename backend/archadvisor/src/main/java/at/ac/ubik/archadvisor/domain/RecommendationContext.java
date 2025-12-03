@@ -24,5 +24,14 @@ public final class RecommendationContext {
     public PriorityRanking getPriorityRanking() {
         return priorityRanking;
     }
+
+    @Override
+    public String toString() {
+        return "RecommendationContext{" +
+                "technicalProfile=" + technicalProfile +
+                ", teamProfile=" + teamProfile +
+                ", priorityRanking=" + priorityRanking +
+                '}';
+    }
 }
 

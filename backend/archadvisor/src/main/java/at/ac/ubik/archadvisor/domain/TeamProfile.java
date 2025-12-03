@@ -26,4 +26,13 @@ public final class TeamProfile {
     public String getExperienceLevel() {
         return experienceLevel;
     }
+
+    @Override
+    public String toString() {
+        return "TeamProfile{" +
+                "teamSize=" + teamSize +
+                ", experienceLevel='" + experienceLevel + '\'' +
+                ", familiarLanguages=" + familiarLanguages +
+                '}';
+    }
 }
