@@ -65,6 +65,7 @@ type QuestionnaireRequest = {
     //only when deployment == CLOUD TODO
     budgetTier: BudgetTier | null;
     isOpenSource: boolean;
+    isServerlessFriendly: boolean
     expectedUsers: number | null;
     teamSize: number;
     experienceLevel: string;
@@ -79,10 +80,11 @@ type QuestionnaireResponse = {
 
 function QuestionnaireForm() {
     const [form, setForm] = useState<QuestionnaireRequest>({
-        architectureScope: null,
+        architectureScope: "BACKEND_ONLY",
         budgetTier: null,
         isOpenSource: false,
         deploymentPreference: null,
+        isServerlessFriendly: false,
         expectedUsers: null,
         teamSize: 0,
         experienceLevel: "",
@@ -137,7 +139,7 @@ function QuestionnaireForm() {
 
         try {
             var body = JSON.stringify({
-                scope: form.architectureScope,
+                architectureScope: form.architectureScope,
                 isOpenSource: form.isOpenSource,
                 deploymentPreferences: form.deploymentPreference,
                 budgetTier: form.budgetTier,
@@ -254,6 +256,20 @@ function QuestionnaireForm() {
                             <option value={BudgetTier.MEDIUM}>Medium</option>
                             <option value={BudgetTier.HIGH}>High</option>
                         </select>
+                    </label>
+                </div>
+                {/*isServerlessFriendly*/}
+                <div style={{ marginBottom: "1rem" }}>
+                    <label>
+                        Should the selected technologies be serverless friendly?
+                        <input
+                            type="checkbox"
+                            checked={form.isServerlessFriendly}
+                            onChange={(e) =>
+                                setForm({ ...form, isServerlessFriendly: e.target.checked })
+                            }
+                            style={{ marginLeft: "0.5rem" }}
+                        />
                     </label>
                 </div>
                 {/*Number of expected users*/}
