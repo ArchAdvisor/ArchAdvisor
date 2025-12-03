@@ -10,17 +10,19 @@ public final class TechnicalProfile {
     private final DeploymentPreference deploymentPreference;
     private final BudgetTier budgetTier;
     private final Long expectedUsers;
-
+    private boolean isServerlessFriendly;
 
     public TechnicalProfile(ArchitectureScope scope,
                             boolean wantsOpenSourceOnly,
                             DeploymentPreference deploymentPreference,
                             BudgetTier budgetTier,
+                            boolean isServerlessFriendly,
                             Long expectedUsers) {
         this.scope = scope;
         this.wantsOpenSourceOnly = wantsOpenSourceOnly;
         this.deploymentPreference = deploymentPreference;
         this.budgetTier = budgetTier;
+        this.isServerlessFriendly = isServerlessFriendly;
         this.expectedUsers = expectedUsers;
     }
 
@@ -38,5 +40,17 @@ public final class TechnicalProfile {
 
     public BudgetTier getBudgetTier() {
         return budgetTier;
+    }
+
+    @Override
+    public String toString() {
+        return "TechnicalProfile{" +
+                "scope=" + scope +
+                ", wantsOpenSourceOnly=" + wantsOpenSourceOnly +
+                ", deploymentPreference=" + deploymentPreference +
+                ", budgetTier=" + budgetTier +
+                ", isServerlessFriendly=" + isServerlessFriendly +
+                ", expectedUsers=" + expectedUsers +
+                '}';
     }
 }
