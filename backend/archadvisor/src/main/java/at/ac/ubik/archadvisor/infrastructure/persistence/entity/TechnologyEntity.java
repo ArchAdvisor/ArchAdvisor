@@ -31,6 +31,7 @@ public class TechnologyEntity {
     private String description;
     private Instant lastUpdated;
     private Boolean serverlessFriendly;
+    @Column(name = "supports_ssr")
     private Boolean supportsSSR;
     private Double performanceScore;
     private Double scalabilityScore;
