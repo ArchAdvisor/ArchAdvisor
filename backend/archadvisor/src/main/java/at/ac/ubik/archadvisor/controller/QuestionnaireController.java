@@ -6,7 +6,6 @@ import at.ac.ubik.archadvisor.domain.*;
 import at.ac.ubik.archadvisor.service.AdvisorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,37 +26,42 @@ public class QuestionnaireController {
 
     @PostMapping
     public ResponseEntity<QuestionnaireResponseDto> handleQuestionnaire(@RequestBody QuestionnaireRequestDto dto) {
-        TechnicalProfile technicalProfile = new TechnicalProfile(
-                dto.getArchitectureScope(),
-                dto.isIsOpenSource(),
-                dto.getDeploymentPreference(),
-                dto.getBudgetTier(),
-                dto.isServerlessFriendly(),
-                dto.getExpectedUsers()
-        );
+        QuestionnaireResponseDto questionnaireResponseDto = new QuestionnaireResponseDto();
+        try {
+            TechnicalProfile technicalProfile = new TechnicalProfile(
+                    dto.getArchitectureScope(),
+                    dto.isIsOpenSource(),
+                    dto.getDeploymentPreference(),
+                    dto.getBudgetTier(),
+                    dto.isServerlessFriendly(),
+                    dto.getExpectedUsers()
+            );
 
-        TeamProfile teamProfile = new TeamProfile(
-                dto.getTeamSize() != null ? dto.getTeamSize() : 0,
-                dto.getExperienceLevel(),
-                dto.getProgrammingLanguages()
-        );
+            TeamProfile teamProfile = new TeamProfile(
+                    dto.getTeamSize() != null ? dto.getTeamSize() : 0,
+                    dto.getExperienceLevel(),
+                    dto.getProgrammingLanguages()
+            );
 
-        PriorityRanking priorityRanking = new PriorityRanking(
-        );
-        for (int i = 0; i < dto.getPriorityAspects().size(); i++) {
-            priorityRanking.setRanksOfPriorityAspects(dto.getPriorityAspects().get(i), (i + 1));
+            PriorityRanking priorityRanking = new PriorityRanking(
+            );
+            for (int i = 0; i < dto.getPriorityAspects().size(); i++) {
+                priorityRanking.setRanksOfPriorityAspects(dto.getPriorityAspects().get(i), (i + 1));
+            }
+
+            RecommendationContext context = new RecommendationContext(
+                    technicalProfile,
+                    teamProfile,
+                    priorityRanking
+            );
+            log.info(context.toString());
+
+            //TODO: Also ask for numberOfCandidates
+            RecommendationResult result = recommendationService.suggest(context, 4);
+            questionnaireResponseDto = new QuestionnaireResponseDto(technicalProfile.getScope());
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
-
-        RecommendationContext context = new RecommendationContext(
-                technicalProfile,
-                teamProfile,
-                priorityRanking
-        );
-        log.info(context.toString());
-
-        //TODO: Also ask for numberOfCandidates
-        RecommendationResult result = recommendationService.suggest(context, 4);
-
-        return new ResponseEntity<>(new QuestionnaireResponseDto(), HttpStatus.OK);
+        return ResponseEntity.ok(questionnaireResponseDto);
     }
 }
