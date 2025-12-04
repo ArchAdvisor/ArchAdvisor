@@ -218,8 +218,6 @@ class AdvisorServiceTest {
         mobile_two.setEcosystemMaturityScore(0.95);
         mobile_two.setVendorLockinScore(0.15);
         technologyRepository.save(mobile_two);
-
-
     }
 
     @Test
