@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -34,12 +33,12 @@ class QuestionnaireControllerTest {
     private MockMvc mockMvc;
 
 
-    @MockBean
+    @MockitoBean
     private AdvisorService advisorService;
 
 
     @Test
-    void handleQuestionnaire_withValidInput_returnsOkAndCallsService() throws Exception {
+    void handleQuestionnaire_withValidInputBackendOnlyInput_returnsOkAndCallsService() throws Exception {
         Technology backend_one = new BackendFramework(1L,
                 "Spring Boot",
                 "desc",
@@ -52,13 +51,11 @@ class QuestionnaireControllerTest {
                 RuntimeType.JDK,
                 true
         );
-        // Arrange: mock service behavior
         RecommendationResult mockResult = new RecommendationResult(
                 ArchitectureScope.BACKEND_ONLY,
                 List.of(new Recommendation(backend_one, 0.9, new ArrayList<>())), null, null, null
         );
-        when(advisorService.suggest(any(RecommendationContext.class), anyInt()))
-                .thenReturn(mockResult);
+        when(advisorService.suggest(any(RecommendationContext.class), eq(4L))).thenReturn(mockResult);
 
         String json = """
                 {
@@ -81,9 +78,9 @@ class QuestionnaireControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.architectureScope").value("BACKEND_ONLY"));
-        //.andExpect(jsonPath("$.backends[0]").value("Spring Boot"))
-        //.andExpect(jsonPath("$.score").value(0.9));
+                .andExpect(jsonPath("$.architectureScope").value("BACKEND_ONLY"))
+                .andExpect(jsonPath("$.backends[0].technology.name").value("Spring Boot"))
+                .andExpect(jsonPath("$.backends[0].score").value(0.9));
 
         ArgumentCaptor<RecommendationContext> ctxCaptor =
                 ArgumentCaptor.forClass(RecommendationContext.class);
