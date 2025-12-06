@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ArchitectureScope = {
     BACKEND_ONLY: "BACKEND_ONLY",
@@ -131,6 +132,7 @@ function QuestionnaireForm() {
         });
     };
 
+    const navigate = useNavigate();
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -163,7 +165,7 @@ function QuestionnaireForm() {
             }
 
             const data: QuestionnaireResponse = await response.json();
-            setResult(data);
+            navigate("/results", { state: { result: data } });
         } catch (err: any) {
             console.error(err);
             setError(err.message ?? "Unknown error");
@@ -242,7 +244,7 @@ function QuestionnaireForm() {
                     <label>
                         Which budgetTier are you planning to use?:
                         <select
-                            value={form.architectureScope ?? ""}
+                            value={form.budgetTier ?? ""}
                             onChange={(e) =>
                                 setForm({
                                     ...form,
@@ -405,20 +407,6 @@ function QuestionnaireForm() {
                 </p>
             )}
 
-            {result && (
-                <div
-                    style={{
-                        marginTop: "1.5rem",
-                        padding: "1rem",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                    }}
-                >
-                    <h2>Backend Response</h2>
-                    <p><strong>Summary:</strong> {result.summary}</p>
-                    <p><strong>Score:</strong> {result.score}</p>
-                </div>
-            )}
         </div>
     );
 }
