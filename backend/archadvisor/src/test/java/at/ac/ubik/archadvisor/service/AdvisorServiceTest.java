@@ -3,6 +3,7 @@ package at.ac.ubik.archadvisor.service;
 import at.ac.ubik.archadvisor.domain.*;
 import at.ac.ubik.archadvisor.domain.enums.*;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.TechnologyEntity;
+import at.ac.ubik.archadvisor.infrastructure.persistence.repository.CompatibilityRuleRepository;
 import at.ac.ubik.archadvisor.infrastructure.persistence.repository.TechnologyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class AdvisorServiceTest {
 
     @Autowired
-    private TechnologyRepository repo;
+    private TechnologyRepository technologyRepository;
+
+    @Autowired
+    private CompatibilityRuleRepository compatibilityRuleRepository;
 
     @Autowired
     private AdvisorService advisorService;
@@ -29,7 +33,8 @@ class AdvisorServiceTest {
 
     @BeforeEach
     void setUpRepository() {
-        repo.deleteAll();
+        compatibilityRuleRepository.deleteAll();
+        technologyRepository.deleteAll();
         TechnologyEntity backend_one = new TechnologyEntity(
                 "Spring Boot",
                 TechnologyKind.BACKEND,
@@ -51,7 +56,7 @@ class AdvisorServiceTest {
         backend_one.setCommunitySupportScore(0.95);
         backend_one.setEcosystemMaturityScore(0.98);
         backend_one.setVendorLockinScore(0.10);
-        repo.save(backend_one);
+        technologyRepository.save(backend_one);
 
         TechnologyEntity backend_two = new TechnologyEntity(
                 "Express.js",
@@ -74,7 +79,7 @@ class AdvisorServiceTest {
         backend_two.setCommunitySupportScore(0.88);
         backend_two.setEcosystemMaturityScore(0.90);
         backend_two.setVendorLockinScore(0.05);
-        repo.save(backend_two);
+        technologyRepository.save(backend_two);
 
 
         TechnologyEntity frontend_one = new TechnologyEntity(
@@ -98,7 +103,7 @@ class AdvisorServiceTest {
         frontend_one.setCommunitySupportScore(0.98);
         frontend_one.setEcosystemMaturityScore(0.97);
         frontend_one.setVendorLockinScore(0.10);
-        repo.save(frontend_one);
+        technologyRepository.save(frontend_one);
 
         TechnologyEntity frontend_two = new TechnologyEntity(
                 "Angular",
@@ -121,7 +126,7 @@ class AdvisorServiceTest {
         frontend_two.setCommunitySupportScore(0.90);
         frontend_two.setEcosystemMaturityScore(0.95);
         frontend_two.setVendorLockinScore(0.20);
-        repo.save(frontend_two);
+        technologyRepository.save(frontend_two);
 
 
         TechnologyEntity db_one = new TechnologyEntity(
@@ -144,7 +149,7 @@ class AdvisorServiceTest {
         db_one.setCommunitySupportScore(0.95);
         db_one.setEcosystemMaturityScore(0.98);
         db_one.setVendorLockinScore(0.05);
-        repo.save(db_one);
+        technologyRepository.save(db_one);
 
         TechnologyEntity db_two = new TechnologyEntity(
                 "MongoDB",
@@ -166,7 +171,7 @@ class AdvisorServiceTest {
         db_two.setCommunitySupportScore(0.90);
         db_two.setEcosystemMaturityScore(0.95);
         db_two.setVendorLockinScore(0.10);
-        repo.save(db_two);
+        technologyRepository.save(db_two);
 
         TechnologyEntity mobile_one = new TechnologyEntity(
                 "Flutter",
@@ -189,7 +194,7 @@ class AdvisorServiceTest {
         mobile_one.setCommunitySupportScore(0.90);
         mobile_one.setEcosystemMaturityScore(0.90);
         mobile_one.setVendorLockinScore(0.20);
-        repo.save(mobile_one);
+        technologyRepository.save(mobile_one);
 
         TechnologyEntity mobile_two = new TechnologyEntity(
                 "React Native",
@@ -212,14 +217,12 @@ class AdvisorServiceTest {
         mobile_two.setCommunitySupportScore(0.90);
         mobile_two.setEcosystemMaturityScore(0.95);
         mobile_two.setVendorLockinScore(0.15);
-        repo.save(mobile_two);
-
-
+        technologyRepository.save(mobile_two);
     }
 
     @Test
     void suggest_Returns2Recommendations_WhenCalledWith2NumberOfCandidatesBackendOnly() {
-        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, 100L);
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, true, 100L);
         TeamProfile teamProfile = new TeamProfile(1, "Beginner", new HashSet<>());
         HashMap<PriorityAspect, Integer> priorities = new HashMap<>();
         priorities.put(PriorityAspect.PERFORMANCE, 1);
@@ -235,7 +238,7 @@ class AdvisorServiceTest {
 
     @Test
     void suggest_Returns1Recommendations_WhenCalledWith1NumberOfCandidatesBackendOnly() {
-        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, 100L);
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, true, 100L);
         TeamProfile teamProfile = new TeamProfile(1, "Beginner", new HashSet<>());
         HashMap<PriorityAspect, Integer> priorities = new HashMap<>();
         priorities.put(PriorityAspect.PERFORMANCE, 1);
@@ -251,7 +254,7 @@ class AdvisorServiceTest {
 
     @Test
     void suggest_Returns2Recommendations_WhenCalledWith2NumberOfCandidatesFullStack() {
-        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.FULL_STACK, true, null, null, 100L);
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.FULL_STACK, true, null, null, true, 100L);
         TeamProfile teamProfile = new TeamProfile(1, "Beginner", new HashSet<>());
         HashMap<PriorityAspect, Integer> priorities = new HashMap<>();
         priorities.put(PriorityAspect.PERFORMANCE, 1);
@@ -269,7 +272,7 @@ class AdvisorServiceTest {
 
     @Test
     void suggest_Returns2Recommendations_WhenCalledWith2NumberOfCandidatesMobile() {
-        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.MOBILE, true, null, null, 100L);
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.MOBILE, true, null, null, true, 100L);
         TeamProfile teamProfile = new TeamProfile(1, "Beginner", new HashSet<>());
         HashMap<PriorityAspect, Integer> priorities = new HashMap<>();
         priorities.put(PriorityAspect.PERFORMANCE, 1);
@@ -285,7 +288,7 @@ class AdvisorServiceTest {
 
     @Test
     void filterByTechnicalProfile_ReturnsFalse_WhenIsOpenSourceAndTechnologyIsProprietary() {
-        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, 100L);
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, true, 100L);
         FrontendFramework sencha = new FrontendFramework(1L, "Sencha Ext JS", "test-descp", LicenseType.PROPRIETARY, new HashSet<>(), "test/url", "test/url", Instant.now(), ProgrammingLanguage.JAVASCRIPT, RuntimeType.NODE, true);
         RecommendationContext recommendation = new RecommendationContext(technicalProfile, null, null);
         boolean isAccepted = advisorService.filterByTechnicalProfile(sencha, recommendation);
@@ -294,7 +297,7 @@ class AdvisorServiceTest {
 
     @Test
     void filterByTechnicalProfile_ReturnsTrue_WhenIsOpenSourceAndTechnologyIsOpenSource() {
-        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, 100L);
+        TechnicalProfile technicalProfile = new TechnicalProfile(ArchitectureScope.BACKEND_ONLY, true, null, null, false, 100L);
         FrontendFramework react = new FrontendFramework(1L, "Sencha Ext JS", "test-descp", LicenseType.OPEN_SOURCE, new HashSet<>(), "test/url", "test/url", Instant.now(), ProgrammingLanguage.JAVASCRIPT, RuntimeType.NODE, true);
         RecommendationContext recommendation = new RecommendationContext(technicalProfile, null, null);
         boolean isAccepted = advisorService.filterByTechnicalProfile(react, recommendation);

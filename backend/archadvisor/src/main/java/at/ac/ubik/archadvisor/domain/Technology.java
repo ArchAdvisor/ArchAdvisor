@@ -17,7 +17,7 @@ public abstract class Technology {
     private final LicenseType license;
     private final Set<String> tags;
     private final String githubUrl;
-    private final String documentation;
+    private final String documentationUrl;
     private final Instant lastUpdated;
 
     private final Map<PriorityAspect, Double> metricScores = new EnumMap<>(PriorityAspect.class);
@@ -28,7 +28,7 @@ public abstract class Technology {
                          LicenseType license,
                          Set<String> tags,
                          String githubUrl,
-                         String documentation,
+                         String documentationUrl,
                          Instant lastUpdated) {
         this.id = id;
         this.name = name;
@@ -36,7 +36,7 @@ public abstract class Technology {
         this.license = license;
         this.tags = tags;
         this.githubUrl = githubUrl;
-        this.documentation = documentation;
+        this.documentationUrl = documentationUrl;
         this.lastUpdated = lastUpdated;
     }
 
@@ -66,5 +66,13 @@ public abstract class Technology {
 
     public void setValueOfMetricScore(PriorityAspect aspect, double value) {
         metricScores.put(aspect, value);
+    }
+
+    public String getGithubUrl() {
+        return githubUrl;
+    }
+
+    public String getDocumentationUrl() {
+        return documentationUrl;
     }
 }
