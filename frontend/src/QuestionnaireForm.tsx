@@ -1,11 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const ArchitectureScope = {
-    BACKEND_ONLY: "BACKEND_ONLY",
-    FULL_STACK: "FULL_STACK",
-    MOBILE: "MOBILE",
-} as const;
+
 
 const ProgrammingLanguages = {
     JAVASCRIPT: "JAVASCRIPT",
@@ -53,15 +49,13 @@ const PRIORITY_ASPECT_LABELS: Record<PriorityAspects, string> = {
 };
 
 
-
-type ArchitectureScope = typeof ArchitectureScope[keyof typeof ArchitectureScope];
 type DeploymentPreferences = typeof DeploymentPreferences[keyof typeof DeploymentPreferences];
 type ProgrammingLanguages = typeof ProgrammingLanguages[keyof typeof ProgrammingLanguages];
 type PriorityAspects = typeof PriorityAspects[keyof typeof PriorityAspects];
 type BudgetTier = typeof BudgetTier[keyof typeof BudgetTier];
 
 type QuestionnaireRequest = {
-    architectureScope: ArchitectureScope | null;
+    architectureScope: string | null;
     deploymentPreference: DeploymentPreferences | null;
     //only when deployment == CLOUD TODO
     budgetTier: BudgetTier | null;
@@ -194,9 +188,9 @@ function QuestionnaireForm() {
                             style={{ marginLeft: "0.5rem", width: "100%" }}
                         >
                             <option value="">Select an option</option>
-                            <option value={ArchitectureScope.BACKEND_ONLY}>Backend Only</option>
-                            <option value={ArchitectureScope.FULL_STACK}>Full Stack</option>
-                            <option value={ArchitectureScope.MOBILE}>Mobile</option>
+                            <option value={"BACKEND_ONLY"}>Backend Only</option>
+                            <option value={"FULL_STACK"}>Full Stack</option>
+                            <option value={"MOBILE"}>Mobile</option>
                         </select>
                     </label>
                 </div>
@@ -301,7 +295,7 @@ function QuestionnaireForm() {
                             onChange={(e) =>
                                 setForm({
                                     ...form,
-                                    teamSize: e.target.value === "" ? null : Number(e.target.value),
+                                    teamSize: e.target.value === "" ? 1 : Number(e.target.value),
                                 })
                             }
                             style={{ marginLeft: "0.5rem", width: "100%" }}
