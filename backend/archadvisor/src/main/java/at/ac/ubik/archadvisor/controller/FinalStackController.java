@@ -52,7 +52,7 @@ public class FinalStackController {
         return technologyRepository.findById(id).map(TechnologyEntity::getName).orElse("Unknown (id=" + id + ")");
     }
 
-    //DEBUG!
+    //Debug only!
     @GetMapping(value = "/pdf/preview", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> previewPdf(
             @RequestParam(required = false) Long backendId,
