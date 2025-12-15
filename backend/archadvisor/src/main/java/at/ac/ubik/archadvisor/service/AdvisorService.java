@@ -102,8 +102,6 @@ public class AdvisorService {
                 tech.getLicense() == LicenseType.PROPRIETARY) {
             return false;
         }
-
-        // TODO: add more filters: architecture scope, deployment, etc.
         return true;
     }
 }

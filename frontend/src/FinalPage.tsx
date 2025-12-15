@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import type { QuestionnaireResponse, Recommendation } from "./types/QuestionnaireResponse";
-import type { ArchitectureScope } from "./QuestionnaireForm";
+import type { FinalStackRequest } from "./types/FinalStackRequest";
 
 type PersonalStack = {
     backend: Recommendation | null;
@@ -49,6 +50,47 @@ function FinalStackPage() {
         );
     };
 
+    const [pdfError, setPdfError] = useState<string | null>(null);
+    const [pdfLoading, setPdfLoading] = useState(false);
+
+    const downloadPdf = async () => {
+        // Build payload from your personalStack
+        const payload: FinalStackRequest = {
+            architectureScope: result.architectureScope,
+            backendId: personalStack.backend?.technology.id ?? undefined,
+            frontendId: personalStack.frontend?.technology.id ?? undefined,
+            databaseId: personalStack.database?.technology.id ?? undefined,
+            mobileId: personalStack.mobile?.technology.id ?? undefined,
+        };
+
+        const res = await fetch("/api/stack/pdf", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            throw new Error(`PDF generation failed: ${res.status}`);
+        }
+
+        // Get filename from header (optional)
+        const disposition = res.headers.get("Content-Disposition");
+        const fileName =
+            disposition?.match(/filename="(.+)"/)?.[1] ?? "archadvisor-stack.pdf";
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
+    };
+
     return (
         <div style={{ maxWidth: 800, margin: "2rem auto", fontFamily: "sans-serif" }}>
             <h1>Your final stack</h1>
@@ -76,7 +118,24 @@ function FinalStackPage() {
             </ul>
 
 
+            <button
+                onClick={async () => {
+                    try {
+                        setPdfLoading(true);
+                        setPdfError(null);
+                        await downloadPdf();
+                    } catch (e: any) {
+                        setPdfError(e?.message ?? "Could not generate PDF");
+                    } finally {
+                        setPdfLoading(false);
+                    }
+                }}
+                disabled={pdfLoading}
+            >
+                {pdfLoading ? "Generating PDF..." : "Download PDF"}
+            </button>
 
+            {pdfError && <p style={{ color: "red" }}>{pdfError}</p>}
             <button style={{ marginTop: "2rem" }} onClick={() => navigate("/")}>
                 Start over
             </button>

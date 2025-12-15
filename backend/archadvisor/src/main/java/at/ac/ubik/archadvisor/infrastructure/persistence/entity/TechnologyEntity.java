@@ -42,7 +42,7 @@ public class TechnologyEntity {
     private Double ecosystemMaturityScore;
     private Double vendorLockinScore;
 
-    protected TechnologyEntity() {
+    public TechnologyEntity() {
     }
 
     public boolean isSupportsSSR() {
@@ -204,6 +204,10 @@ public class TechnologyEntity {
 
     public MobilePlatform getMobilePlatform() {
         return mobilePlatform;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
 
