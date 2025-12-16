@@ -17,6 +17,7 @@ public class QuestionnaireRequestDto {
     private String experienceLevel;
     private Set<ProgrammingLanguage> programmingLanguages;
     private List<PriorityAspect> priorityAspects;
+    private int topRankN;
 
     public QuestionnaireRequestDto() {
     }
@@ -100,6 +101,22 @@ public class QuestionnaireRequestDto {
 
     public void setPriorityAspects(List<PriorityAspect> priorityAspects) {
         this.priorityAspects = priorityAspects;
+    }
+
+    public boolean isOpenSource() {
+        return isOpenSource;
+    }
+
+    public void setOpenSource(boolean openSource) {
+        isOpenSource = openSource;
+    }
+
+    public int getTopRankN() {
+        return topRankN;
+    }
+
+    public void setTopRankN(int topRankN) {
+        this.topRankN = topRankN;
     }
 }
 
