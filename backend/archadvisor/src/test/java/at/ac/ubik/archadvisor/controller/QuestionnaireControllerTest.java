@@ -70,7 +70,8 @@ class QuestionnaireControllerTest {
                   "priorityAspects":[
                     "PERFORMANCE","SCALABILITY","MAINTAINABILITY","SECURITY",
                     "COST_EFFECTIVENESS","COMMUNITY_SUPPORT","ECOSYSTEM_MATURITY","VENDOR_LOCKIN_AVOIDANCE"
-                  ]
+                  ],
+                  "topRankN":4
                 }
                 """;
 
