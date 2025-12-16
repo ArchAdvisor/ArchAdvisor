@@ -66,6 +66,7 @@ type QuestionnaireRequest = {
     experienceLevel: string;
     teamProgrammingLanguages: ProgrammingLanguages[];
     priorityAspects: PriorityAspects[];
+    topRankN?: number;
 };
 
 type QuestionnaireResponse = {
@@ -94,6 +95,7 @@ function QuestionnaireForm() {
             PriorityAspects.VENDOR_LOCKIN_AVOIDANCE,
         ],
         teamProgrammingLanguages: [],
+        topRankN: 4,
     });
 
     const [loading, setLoading] = useState(false);
@@ -141,9 +143,11 @@ function QuestionnaireForm() {
                 budgetTier: form.budgetTier,
                 expectedNumberOfUsers: form.expectedUsers,
                 teamSize: form.teamSize,
+                isServerlessFriendly: form.isServerlessFriendly,
                 experienceLevel: form.experienceLevel,
                 programmingLanguages: form.teamProgrammingLanguages,
-                priorityAspects: form.priorityAspects
+                priorityAspects: form.priorityAspects,
+                topRankN: form.topRankN,
             });
             console.log(body)
             const response = await fetch("/api/questionnaire", {
@@ -182,7 +186,7 @@ function QuestionnaireForm() {
                             onChange={(e) =>
                                 setForm({
                                     ...form,
-                                    architectureScope: e.target.value === "" ? null : (e.target.value as ArchitectureScope),
+                                    architectureScope: e.target.value === "" ? null : e.target.value,
                                 })
                             }
                             style={{ marginLeft: "0.5rem", width: "100%" }}
@@ -275,6 +279,7 @@ function QuestionnaireForm() {
                         <input
                             type="number"
                             value={form.expectedUsers ?? ""}
+                            min={1}
                             onChange={(e) =>
                                 setForm({
                                     ...form,
@@ -291,6 +296,7 @@ function QuestionnaireForm() {
                         Team Size:
                         <input
                             type="number"
+                            min={1}
                             value={form.teamSize ?? ""}
                             onChange={(e) =>
                                 setForm({
@@ -389,7 +395,28 @@ function QuestionnaireForm() {
                         ))}
                     </ol>
                 </div>
-
+                {/*TopRankN*/}
+                <div style={{ marginBottom: "1rem" }}>
+                    <label>
+                        What number of top rank recommendation should be displayed?:
+                        <input
+                            type="number"
+                            value={form.topRankN ?? ""}
+                            min={1}
+                            onChange={(e) => {
+                                const val = Number(e.target.value);
+                                if (val >= 1) {
+                                    setForm({
+                                        ...form,
+                                        topRankN: e.target.value === "" ? 4 : Number(e.target.value),
+                                    });
+                                }
+                            }}
+                            style={{ marginLeft: "0.5rem", width: "100%" }}
+                        />
+                    </label>
+                </div>
+                {/* Submit Button */}
                 <button type="submit" disabled={loading}>
                     {loading ? "Sending..." : "Submit"}
                 </button>
