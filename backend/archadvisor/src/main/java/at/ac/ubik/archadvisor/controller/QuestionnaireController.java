@@ -53,10 +53,11 @@ public class QuestionnaireController {
                 teamProfile,
                 priorityRanking
         );
-        log.info(context.toString());
-
-        //TODO: Also ask for numberOfCandidates
-        RecommendationResult result = recommendationService.suggest(context, 4);
+        if (dto.getTopRankN() < 1) {
+            log.error("topRankN must be > 0");
+            dto.setTopRankN(4);
+        }
+        RecommendationResult result = recommendationService.suggest(context, dto.getTopRankN());
         QuestionnaireResponseDto questionnaireResponseDto = new QuestionnaireResponseDto(result.architectureScope());
         questionnaireResponseDto.setBackends(result.backends());
         questionnaireResponseDto.setFrontends(result.frontends());
