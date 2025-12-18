@@ -30,12 +30,12 @@ public class QuestionnaireDraftService {
         return questionnaireDraft.getId();
     }
 
-    public QuestionnaireRequestDto getDraft(UUID id) throws Exception {
+    public QuestionnaireRequestDto getDraft(UUID id) throws EntityNotFoundException {
         QuestionnaireDraftEntity questionnaireDraft = requireDraft(id);
         return mapper.toDto(questionnaireDraft);
     }
 
-    public UUID updateDraft(UUID id, QuestionnaireRequestDto dto) throws Exception {
+    public UUID updateDraft(UUID id, QuestionnaireRequestDto dto) throws EntityNotFoundException {
         QuestionnaireDraftEntity existing = requireDraft(id);
         mapper.updateEntity(existing, dto);
         questionnaireDraftRepository.save(existing);
