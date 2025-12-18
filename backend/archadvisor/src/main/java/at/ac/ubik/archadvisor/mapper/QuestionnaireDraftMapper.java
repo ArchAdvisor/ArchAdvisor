@@ -21,7 +21,7 @@ public class QuestionnaireDraftMapper {
         entity.setPayload(toJson(dto));
         entity.setCreatedAt(Instant.now());
         entity.setUpdatedAt(Instant.now());
-        entity.setVersion("v1");
+        entity.setVersion(1);
         return entity;
     }
 
@@ -45,12 +45,7 @@ public class QuestionnaireDraftMapper {
     public void updateEntity(QuestionnaireDraftEntity entity, QuestionnaireRequestDto dto) {
         entity.setPayload(objectMapper.valueToTree(dto));
         entity.setUpdatedAt(Instant.now());
-        entity.setVersion(updateVersionNumber(entity.getVersion()));
-    }
-
-    private String updateVersionNumber(String currentVersion) {
-        long number = Long.parseLong(currentVersion.split("v")[1]);
-        return String.valueOf(number + 1);
+        entity.setVersion(entity.getVersion() + 1);
     }
 
 }

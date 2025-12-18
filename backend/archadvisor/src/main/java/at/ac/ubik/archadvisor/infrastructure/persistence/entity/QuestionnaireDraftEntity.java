@@ -28,7 +28,7 @@ public class QuestionnaireDraftEntity {
     private Instant updatedAt;
 
     @Column(name = "version", nullable = false)
-    private String version = "v1";
+    private long version = 1;
 
 
     public QuestionnaireDraftEntity() {
@@ -55,11 +55,11 @@ public class QuestionnaireDraftEntity {
         this.id = id;
     }
 
-    public String getVersion() {
+    public long getVersion() {
         return version;
     }
 
-    public void setVersion(String version) {
+    public void setVersion(long version) {
         this.version = version;
     }
 
