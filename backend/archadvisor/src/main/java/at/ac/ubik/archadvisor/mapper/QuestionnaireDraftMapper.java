@@ -48,4 +48,11 @@ public class QuestionnaireDraftMapper {
         entity.setVersion(entity.getVersion() + 1);
     }
 
+    public QuestionnaireRequestDto payloadToDto(QuestionnaireDraftEntity entity) {
+        return objectMapper.convertValue(
+                entity.getPayload(),
+                QuestionnaireRequestDto.class
+        );
+    }
+
 }
