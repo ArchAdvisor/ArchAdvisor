@@ -4,5 +4,7 @@ export type FinalStackRequest = {
   frontendId?: number;
   databaseId?: number;
   mobileId?: number;
+  draftLink?: string;
+  draftId?: string;
 };
 
