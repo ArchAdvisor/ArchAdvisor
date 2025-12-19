@@ -13,6 +13,8 @@ type PersonalStack = {
 type LocationState = {
     result: QuestionnaireResponse;
     personalStack: PersonalStack;
+    draftLink?: string | null;
+    draftId?: string | null;
 };
 
 function FinalStackPage() {
@@ -61,7 +63,9 @@ function FinalStackPage() {
             frontendId: personalStack.frontend?.technology.id ?? undefined,
             databaseId: personalStack.database?.technology.id ?? undefined,
             mobileId: personalStack.mobile?.technology.id ?? undefined,
-        };
+            draftLink: state.draftLink ?? undefined,
+            draftId: state.draftId ?? undefined,
+        };  
 
         const res = await fetch("/api/stack/pdf", {
             method: "POST",
@@ -89,6 +93,31 @@ function FinalStackPage() {
         a.remove();
 
         window.URL.revokeObjectURL(url);
+    };
+
+      const downloadPdfDebug = async () => {
+        // Build payload from your personalStack
+        console.log("Debug: draftLink =", state.draftLink);
+        const payload: FinalStackRequest = {
+            architectureScope: result.architectureScope,
+            backendId: personalStack.backend?.technology.id ?? undefined,
+            frontendId: personalStack.frontend?.technology.id ?? undefined,
+            databaseId: personalStack.database?.technology.id ?? undefined,
+            mobileId: personalStack.mobile?.technology.id ?? undefined,
+            draftLink: state.draftLink ?? undefined,
+            draftId: state.draftId ?? undefined,
+        };  
+
+        const res = await fetch("/api/stack/pdf", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            throw new Error(`PDF generation failed: ${res.status}`);
+        }
+        console.log("PDF generation response:", res);
     };
 
     return (
@@ -138,6 +167,10 @@ function FinalStackPage() {
             {pdfError && <p style={{ color: "red" }}>{pdfError}</p>}
             <button style={{ marginTop: "2rem" }} onClick={() => navigate("/")}>
                 Start over
+            </button>
+
+            <button style={{ marginTop: "1rem", marginLeft: "1rem" }} onClick={() => downloadPdfDebug()}>
+                Debug REST call
             </button>
         </div>
     );

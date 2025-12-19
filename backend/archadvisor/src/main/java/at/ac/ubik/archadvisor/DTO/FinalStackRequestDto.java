@@ -8,6 +8,24 @@ public class FinalStackRequestDto {
     private Long frontendId;
     private Long databaseId;
     private Long mobileId;
+    private String draftLink;
+    private String draftId;
+
+    public String getDraftLink() {
+        return draftLink;
+    }
+
+    public void setDraftLink(String draftLink) {
+        this.draftLink = draftLink;
+    }
+
+    public String getDraftId() {
+        return draftId;
+    }
+
+    public void setDraftId(String draftId) {
+        this.draftId = draftId;
+    }
 
     public ArchitectureScope getArchitectureScope() {
         return architectureScope;

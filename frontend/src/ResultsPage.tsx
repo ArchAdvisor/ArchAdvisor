@@ -5,6 +5,8 @@ import type { PersonalStack } from "./types/PersonalStack";
 
 type LocationState = {
   result: QuestionnaireResponse;
+  draftLink?: string | null;
+  draftId?: string | null;
 };
 
 function ResultsPage() {
@@ -12,7 +14,7 @@ function ResultsPage() {
   const location = useLocation();
 
   const state = location.state as LocationState | null;
-
+  const draftLink = state?.draftLink;
   if (!state || !state.result) {
     return (
       <div style={{ maxWidth: 800, margin: "2rem auto", fontFamily: "sans-serif" }}>
@@ -61,6 +63,8 @@ function ResultsPage() {
       state: {
         result,
         personalStack,
+        draftLink,
+        draftId: state.draftId,
       },
     });
   };

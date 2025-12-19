@@ -3,7 +3,9 @@ package at.ac.ubik.archadvisor.controller;
 import at.ac.ubik.archadvisor.DTO.FinalStackRequestDto;
 import at.ac.ubik.archadvisor.domain.enums.ArchitectureScope;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.TechnologyEntity;
+import at.ac.ubik.archadvisor.infrastructure.persistence.repository.QuestionnaireDraftRepository;
 import at.ac.ubik.archadvisor.infrastructure.persistence.repository.TechnologyRepository;
+import at.ac.ubik.archadvisor.mapper.QuestionnaireDraftMapper;
 import at.ac.ubik.archadvisor.service.documentcreator.DocumentCreator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,6 +37,12 @@ class FinalStackControllerTest {
     TechnologyRepository technologyRepository;
     @MockitoBean
     DocumentCreator documentCreator;
+
+    @MockitoBean
+    QuestionnaireDraftRepository questionnaireDraftRepository;
+
+    @MockitoBean
+    QuestionnaireDraftMapper questionnaireDraftMapper;
 
     @Test
     void generatePdf_returnsPdfAndHeaders_andResolvesNames() throws Exception {
@@ -59,6 +68,7 @@ class FinalStackControllerTest {
         dto.setDatabaseId(3L);
         dto.setMobileId(null);
         dto.setArchitectureScope(ArchitectureScope.FULL_STACK);
+        dto.setDraftId(UUID.randomUUID().toString());
 
         String json = objectMapper.writeValueAsString(dto);
 
@@ -97,6 +107,7 @@ class FinalStackControllerTest {
 
         FinalStackRequestDto dto = new FinalStackRequestDto();
         dto.setArchitectureScope(null);
+        dto.setDraftId(UUID.randomUUID().toString());
 
         mvc.perform(post("/api/stack/pdf")
                         .contentType(MediaType.APPLICATION_JSON)

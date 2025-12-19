@@ -7,6 +7,7 @@ import java.util.Set;
 
 public class QuestionnaireRequestDto {
 
+    private String projectName;
     private ArchitectureScope architectureScope;
     private boolean isOpenSource;
     private DeploymentPreference deploymentPreference;
@@ -117,6 +118,14 @@ public class QuestionnaireRequestDto {
 
     public void setTopRankN(int topRankN) {
         this.topRankN = topRankN;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }
 
