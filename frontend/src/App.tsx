@@ -9,6 +9,7 @@ function App() {
       <Route path="/" element={<QuestionnaireForm />} />
       <Route path="/results" element={<ResultsPage />} />
       <Route path="/final" element={<FinalStackPage />} />
+      <Route path="/draft/:draftId" element={<QuestionnaireForm />} />
     </Routes>
   );
 }
