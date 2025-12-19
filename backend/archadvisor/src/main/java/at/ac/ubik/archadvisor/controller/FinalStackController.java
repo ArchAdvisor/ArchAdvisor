@@ -3,20 +3,28 @@ package at.ac.ubik.archadvisor.controller;
 import at.ac.ubik.archadvisor.DTO.FinalStackRequestDto;
 import at.ac.ubik.archadvisor.domain.enums.ArchitectureScope;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.TechnologyEntity;
+import at.ac.ubik.archadvisor.infrastructure.persistence.repository.QuestionnaireDraftRepository;
 import at.ac.ubik.archadvisor.infrastructure.persistence.repository.TechnologyRepository;
 import at.ac.ubik.archadvisor.service.documentcreator.DocumentCreator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/stack")
 public class FinalStackController {
 
     private final TechnologyRepository technologyRepository;
+    private static final Logger log = LoggerFactory.getLogger(FinalStackController.class);
     private final DocumentCreator documentCreator;
+    private final QuestionnaireDraftRepository questionnaireDraftRepository;
 
-    public FinalStackController(TechnologyRepository technologyRepository, DocumentCreator documentCreator) {
+    public FinalStackController(TechnologyRepository technologyRepository, QuestionnaireDraftRepository questionnaireDraftRepository, DocumentCreator documentCreator) {
         this.technologyRepository = technologyRepository;
+        this.questionnaireDraftRepository = questionnaireDraftRepository;
         this.documentCreator = documentCreator;
     }
 
@@ -27,7 +35,20 @@ public class FinalStackController {
         String frontendName = resolveName(dto.getFrontendId());
         String databaseName = resolveName(dto.getDatabaseId());
         String mobileName = resolveName(dto.getMobileId());
-
+        String draftLink = dto.getDraftLink();
+        String draftId = dto.getDraftId();
+        long draftVersion;
+        if (questionnaireDraftRepository.findById(UUID.fromString(draftId)).isPresent()) {
+            draftVersion = questionnaireDraftRepository.findById(UUID.fromString(draftId)).get().getVersion();
+        } else {
+            log.error("Could not find questionnaire draft id {}", draftId);
+            draftVersion = 1L;
+        }
+        if (draftLink == null) {
+            log.warn("Draft link is null");
+            draftLink = "http://localhost:3000/draft/" + draftId;
+        }
+        log.warn("Draft additions: {} {} {}", draftLink, draftId, draftVersion);
         byte[] pdf = documentCreator.createStackPdf(
                 "ArchAdvisor – Recommended Stack",
                 dto.getArchitectureScope() != null ? dto.getArchitectureScope().name() : "N/A",
