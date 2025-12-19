@@ -1,5 +1,5 @@
-import { type FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { type FormEvent, useState, useEffect, useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 
 
@@ -82,7 +82,7 @@ function QuestionnaireForm() {
         deploymentPreference: null,
         isServerlessFriendly: false,
         expectedUsers: null,
-        teamSize: 0,
+        teamSize: 1,
         experienceLevel: "",
         priorityAspects: [
             PriorityAspects.PERFORMANCE,
@@ -97,6 +97,28 @@ function QuestionnaireForm() {
         teamProgrammingLanguages: [],
         topRankN: 4,
     });
+    const formDefaults: QuestionnaireRequest = {
+        architectureScope: "BACKEND_ONLY",
+        budgetTier: null,
+        isOpenSource: false,
+        deploymentPreference: null,
+        isServerlessFriendly: false,
+        expectedUsers: null,
+        teamSize: 1,
+        experienceLevel: "",
+        priorityAspects: [
+            PriorityAspects.PERFORMANCE,
+            PriorityAspects.SCALABILITY,
+            PriorityAspects.MAINTAINABILITY,
+            PriorityAspects.SECURITY,
+            PriorityAspects.COST_EFFECTIVENESS,
+            PriorityAspects.COMMUNITY_SUPPORT,
+            PriorityAspects.ECOSYSTEM_MATURITY,
+            PriorityAspects.VENDOR_LOCKIN_AVOIDANCE,
+        ],
+        teamProgrammingLanguages: [],
+        topRankN: 4,
+    };
 
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<QuestionnaireResponse | null>(null);
@@ -129,6 +151,104 @@ function QuestionnaireForm() {
     };
 
     const navigate = useNavigate();
+    const { draftId } = useParams<{ draftId: string }>();
+    const isEditMode = Boolean(draftId);
+
+    // base URL for printing / sharing
+    const draftLink = useMemo(() => {
+        if (!draftId) return null;
+        return `${window.location.origin}/draft/${draftId}`;
+    }, [draftId]);
+    useEffect(() => {
+        if (!draftId) return;
+
+        (async () => {
+            try {
+                setError(null);
+                setLoading(true);
+
+                const res = await fetch(`/api/questionnaire-drafts/${draftId}`);
+                if (!res.ok) {
+                    throw new Error(`Failed to load draft (${res.status})`);
+                }
+
+                const dto = await res.json();
+
+                // map backend DTO -> frontend state keys
+                // backend: deploymentPreferences, expectedNumberOfUsers, programmingLanguages
+                // frontend: deploymentPreference, expectedUsers, teamProgrammingLanguages
+                const loaded: QuestionnaireRequest = {
+                    ...formDefaults,
+                    architectureScope: dto.architectureScope ?? formDefaults.architectureScope,
+                    deploymentPreference: dto.deploymentPreference ?? dto.deploymentPreferences ?? null,
+                    budgetTier: dto.budgetTier ?? null,
+                    isOpenSource: dto.openSource ?? dto.isOpenSource ?? false,
+                    isServerlessFriendly: dto.serverlessFriendly ?? dto.isServerlessFriendly ?? false,
+                    expectedUsers: dto.expectedUsers ?? dto.expectedNumberOfUsers ?? null,
+                    teamSize: dto.teamSize ?? 0,
+                    experienceLevel: dto.experienceLevel ?? "",
+                    teamProgrammingLanguages: dto.teamProgrammingLanguages ?? dto.programmingLanguages ?? [],
+                    priorityAspects: dto.priorityAspects ?? formDefaults.priorityAspects,
+                    topRankN: dto.topRankN ?? formDefaults.topRankN,
+                };
+
+                setForm(loaded);
+            } catch (e: any) {
+                setError(e?.message ?? "Could not load draft");
+            } finally {
+                setLoading(false);
+            }
+        })();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draftId]);
+
+    const saveDraft = async (): Promise<string> => {
+        // Build backend DTO payload (match backend field names)
+        const payload = {
+            architectureScope: form.architectureScope,
+            isOpenSource: form.isOpenSource,
+            deploymentPreference: form.deploymentPreference,
+            budgetTier: form.budgetTier,
+            expectedUsers: form.expectedUsers,        
+            teamSize: form.teamSize,
+            serverlessFriendly: form.isServerlessFriendly,
+            experienceLevel: form.experienceLevel,
+            programmingLanguages: form.teamProgrammingLanguages,
+            priorityAspects: form.priorityAspects,
+            topRankN: form.topRankN,
+        };
+
+        if (draftId) {
+            // update
+            const res = await fetch(`/api/questionnaire-drafts/${draftId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                throw new Error(`Failed to update draft (${res.status})`);
+            }
+
+            return draftId;
+        } else {
+            // create
+            const res = await fetch("/api/questionnaire-drafts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                throw new Error(`Failed to create draft (${res.status})`);
+            }
+
+            // backend returns JSON string uuid: "...."
+            const newId: string = await res.json();
+            return newId;
+        }
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -136,6 +256,12 @@ function QuestionnaireForm() {
         setResult(null);
 
         try {
+            const savedId = await saveDraft();
+
+            // if it was created, move user to /draft/:id so they have the shareable link
+            if (!draftId) {
+                navigate(`/draft/${savedId}`, { replace: true });
+            }
             var body = JSON.stringify({
                 architectureScope: form.architectureScope,
                 isOpenSource: form.isOpenSource,
@@ -149,7 +275,7 @@ function QuestionnaireForm() {
                 priorityAspects: form.priorityAspects,
                 topRankN: form.topRankN,
             });
-            console.log(body)
+            console.log("Draft-Id:", savedId);
             const response = await fetch("/api/questionnaire", {
                 method: "POST",
                 headers: {
@@ -163,7 +289,7 @@ function QuestionnaireForm() {
             }
 
             const data: QuestionnaireResponse = await response.json();
-            navigate("/results", { state: { result: data } });
+            navigate("/results", { state: { result: data, draftLink: draftLink, draftId: savedId } });
         } catch (err: any) {
             console.error(err);
             setError(err.message ?? "Unknown error");
@@ -174,7 +300,22 @@ function QuestionnaireForm() {
 
     return (
         <div style={{ maxWidth: 500, margin: "2rem auto", fontFamily: "sans-serif" }}>
-            <h1>MVP Questionnaire</h1>
+            <h1>Questionnaire</h1>
+            {draftLink && (
+                <div style={{ marginBottom: "1rem", padding: "0.75rem", border: "1px solid #ccc", borderRadius: 6 }}>
+                    <div style={{ fontSize: "0.9rem", marginBottom: "0.25rem" }}>
+                        Editing draft:
+                    </div>
+                    <a href={draftLink}>{draftLink}</a>
+                    <button
+                        type="button"
+                        style={{ marginLeft: "0.5rem" }}
+                        onClick={() => navigator.clipboard.writeText(draftLink)}
+                    >
+                        Copy
+                    </button>
+                </div>
+            )}
 
             <form onSubmit={handleSubmit}>
                 {/* Scope */}
@@ -418,7 +559,7 @@ function QuestionnaireForm() {
                 </div>
                 {/* Submit Button */}
                 <button type="submit" disabled={loading}>
-                    {loading ? "Sending..." : "Submit"}
+                    {loading ? "Sending..." : "Submit and save as draft"}
                 </button>
             </form>
 
