@@ -55,6 +55,7 @@ type PriorityAspects = typeof PriorityAspects[keyof typeof PriorityAspects];
 type BudgetTier = typeof BudgetTier[keyof typeof BudgetTier];
 
 type QuestionnaireRequest = {
+    project_name: string;
     architectureScope: string | null;
     deploymentPreference: DeploymentPreferences | null;
     //only when deployment == CLOUD TODO
@@ -76,6 +77,7 @@ type QuestionnaireResponse = {
 
 function QuestionnaireForm() {
     const [form, setForm] = useState<QuestionnaireRequest>({
+        project_name: "",
         architectureScope: "BACKEND_ONLY",
         budgetTier: null,
         isOpenSource: false,
@@ -98,6 +100,7 @@ function QuestionnaireForm() {
         topRankN: 4,
     });
     const formDefaults: QuestionnaireRequest = {
+        project_name: "",
         architectureScope: "BACKEND_ONLY",
         budgetTier: null,
         isOpenSource: false,
@@ -205,11 +208,12 @@ function QuestionnaireForm() {
     const saveDraft = async (): Promise<string> => {
         // Build backend DTO payload (match backend field names)
         const payload = {
+            projectName: form.project_name,
             architectureScope: form.architectureScope,
             isOpenSource: form.isOpenSource,
             deploymentPreference: form.deploymentPreference,
             budgetTier: form.budgetTier,
-            expectedUsers: form.expectedUsers,        
+            expectedUsers: form.expectedUsers,
             teamSize: form.teamSize,
             serverlessFriendly: form.isServerlessFriendly,
             experienceLevel: form.experienceLevel,
@@ -263,6 +267,7 @@ function QuestionnaireForm() {
                 navigate(`/draft/${savedId}`, { replace: true });
             }
             var body = JSON.stringify({
+                projectName: form.project_name,
                 architectureScope: form.architectureScope,
                 isOpenSource: form.isOpenSource,
                 deploymentPreferences: form.deploymentPreference,
@@ -318,6 +323,20 @@ function QuestionnaireForm() {
             )}
 
             <form onSubmit={handleSubmit}>
+                {/*Project name */}
+                <div style={{ marginBottom: "1rem" }}>
+                    <label>
+                        Name of the Project:
+                        <input
+                            type="text"
+                            value={form.project_name}
+                            onChange={(e) =>
+                                setForm({ ...form, project_name: e.target.value })
+                            }
+                            style={{ marginLeft: "0.5rem", width: "100%" }}
+                        />
+                    </label>
+                </div>
                 {/* Scope */}
                 <div style={{ marginBottom: "1rem" }}>
                     <label>
