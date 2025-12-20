@@ -42,29 +42,35 @@ public class FinalStackController {
         String mobileName = resolveName(dto.getMobileId());
         String draftLink = dto.getDraftLink();
         String draftId = dto.getDraftId();
-        String projectName;
         long draftVersion;
+        QuestionnaireRequestDto questionnaireRequestDto = null;
         if (questionnaireDraftRepository.findById(UUID.fromString(draftId)).isPresent()) {
             QuestionnaireDraftEntity questionnaireDraftEntity = questionnaireDraftRepository.findById(UUID.fromString(draftId)).get();
-            QuestionnaireRequestDto questionnaireRequestDto = questionnaireDraftMapper.payloadToDto(questionnaireDraftEntity);
+            questionnaireRequestDto = questionnaireDraftMapper.payloadToDto(questionnaireDraftEntity);
             draftVersion = questionnaireDraftRepository.findById(UUID.fromString(draftId)).get().getVersion();
-            projectName = questionnaireRequestDto.getProjectName();
         } else {
             log.error("Could not find questionnaire draft id {}", draftId);
             draftVersion = 1L;
         }
         if (draftLink == null) {
             log.warn("Draft link is null");
-            draftLink = "http://localhost:3000/draft/" + draftId;
+            dto.setDraftLink("http://localhost:3000/draft/" + draftId);
+        }
+
+
+        if (questionnaireRequestDto == null) {
+            log.error("Questionnaire Request is null");
         }
         byte[] pdf = documentCreator.createStackPdf(
-                "ArchAdvisor – Recommended Stack",
-                dto.getArchitectureScope() != null ? dto.getArchitectureScope().name() : "N/A",
+                dto,
                 backendName,
                 frontendName,
                 databaseName,
-                mobileName
+                mobileName,
+                questionnaireRequestDto,
+                draftVersion
         );
+
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
@@ -81,7 +87,7 @@ public class FinalStackController {
         return technologyRepository.findById(id).map(TechnologyEntity::getName).orElse("Unknown (id=" + id + ")");
     }
 
-    //Debug only!
+    //DEBUG only!
     @GetMapping(value = "/pdf/preview", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> previewPdf(
             @RequestParam(required = false) Long backendId,
@@ -97,18 +103,25 @@ public class FinalStackController {
         dto.setFrontendId(frontendId);
         dto.setDatabaseId(databaseId);
         dto.setMobileId(mobileId);
+        dto.setDraftLink("http://localhost:3000/");
+        dto.setDraftId("AIIA-34");
+        dto.setAuthorName("Emil");
+        dto.setOrganization("Translogica");
+        dto.setNotes("bla bla bla bla");
 
         String backendName = resolveName(dto.getBackendId());
         String frontendName = resolveName(dto.getFrontendId());
         String databaseName = resolveName(dto.getDatabaseId());
         String mobileName = resolveName(dto.getMobileId());
 
-        byte[] pdf = documentCreator.createStackPdf("ArchAdvisor – Chosen tech Stack",
-                dto.getArchitectureScope() != null ? dto.getArchitectureScope().name() : "N/A",
+        QuestionnaireRequestDto questionnaireRequestDto = new QuestionnaireRequestDto();
+        questionnaireRequestDto.setProjectName("Half life 3");
+        byte[] pdf = documentCreator.createStackPdf(
+                dto,
                 backendName,
                 frontendName,
                 databaseName,
-                mobileName);
+                mobileName, questionnaireRequestDto, 2);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
