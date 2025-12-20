@@ -10,6 +10,9 @@ public class FinalStackRequestDto {
     private Long mobileId;
     private String draftLink;
     private String draftId;
+    private String authorName;
+    private String organization;
+    private String notes;
 
     public String getDraftLink() {
         return draftLink;
@@ -65,5 +68,29 @@ public class FinalStackRequestDto {
 
     public void setMobileId(Long mobileId) {
         this.mobileId = mobileId;
+    }
+
+    public String getAuthorName() {
+        return authorName;
+    }
+
+    public void setAuthorName(String authorName) {
+        this.authorName = authorName;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public String getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(String organization) {
+        this.organization = organization;
     }
 }
