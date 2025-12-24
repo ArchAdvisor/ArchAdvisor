@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { QuestionnaireResponse, Recommendation } from "./types/QuestionnaireResponse";
 import type { FinalStackRequest } from "./types/FinalStackRequest";
 
@@ -15,6 +15,12 @@ type LocationState = {
     personalStack: PersonalStack;
     draftLink?: string | null;
     draftId?: string | null;
+};
+
+type ExportDialogData = {
+    authorName: string;
+    organization?: string;
+    notes?: string;
 };
 
 function FinalStackPage() {
@@ -55,9 +61,15 @@ function FinalStackPage() {
     const [pdfError, setPdfError] = useState<string | null>(null);
     const [pdfLoading, setPdfLoading] = useState(false);
 
-    const downloadPdf = async () => {
-        // Build payload from your personalStack
-        const payload: FinalStackRequest = {
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [exportData, setExportData] = useState<ExportDialogData>({
+        authorName: "",
+        organization: "",
+        notes: "",
+    });
+    const [dialogError, setDialogError] = useState<string | null>(null);
+    const basePayload = useMemo(
+        () => ({
             architectureScope: result.architectureScope,
             backendId: personalStack.backend?.technology.id ?? undefined,
             frontendId: personalStack.frontend?.technology.id ?? undefined,
@@ -65,8 +77,11 @@ function FinalStackPage() {
             mobileId: personalStack.mobile?.technology.id ?? undefined,
             draftLink: state.draftLink ?? undefined,
             draftId: state.draftId ?? undefined,
-        };  
+        }),
+        [personalStack, result.architectureScope, state.draftId, state.draftLink]
+    );
 
+    const downloadPdf = async (payload: FinalStackRequest) => {
         const res = await fetch("/api/stack/pdf", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -95,29 +110,38 @@ function FinalStackPage() {
         window.URL.revokeObjectURL(url);
     };
 
-      const downloadPdfDebug = async () => {
-        // Build payload from your personalStack
-        console.log("Debug: draftLink =", state.draftLink);
-        const payload: FinalStackRequest = {
-            architectureScope: result.architectureScope,
-            backendId: personalStack.backend?.technology.id ?? undefined,
-            frontendId: personalStack.frontend?.technology.id ?? undefined,
-            databaseId: personalStack.database?.technology.id ?? undefined,
-            mobileId: personalStack.mobile?.technology.id ?? undefined,
-            draftLink: state.draftLink ?? undefined,
-            draftId: state.draftId ?? undefined,
-        };  
+    const onClickDownload = () => {
+        setDialogError(null);
+        setIsDialogOpen(true);
+    };
 
-        const res = await fetch("/api/stack/pdf", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
 
-        if (!res.ok) {
-            throw new Error(`PDF generation failed: ${res.status}`);
+    const onConfirmExport = async () => {
+        if (!exportData.authorName.trim()) {
+            setDialogError("Please enter your name.");
+            return;
         }
-        console.log("PDF generation response:", res);
+
+        try {
+            setPdfLoading(true);
+            setPdfError(null);
+
+            const payload: FinalStackRequest = {
+                ...basePayload,
+                authorName: exportData.authorName.trim(),
+                organization: exportData.organization?.trim(),
+                notes: exportData.notes?.trim(),
+
+            };
+
+            await downloadPdf(payload);
+
+            setIsDialogOpen(false);
+        } catch (e: any) {
+            setPdfError(e?.message ?? "Could not generate PDF");
+        } finally {
+            setPdfLoading(false);
+        }
     };
 
     return (
@@ -130,7 +154,7 @@ function FinalStackPage() {
             <ul>
                 {renderItem("Backend", personalStack.backend, result.architectureScope, [
                     "BACKEND_ONLY",
-                    "FULL_STACK"
+                    "FULL_STACK",
                 ])}
 
                 {renderItem("Frontend", personalStack.frontend, result.architectureScope, [
@@ -146,32 +170,112 @@ function FinalStackPage() {
                 ])}
             </ul>
 
-
-            <button
-                onClick={async () => {
-                    try {
-                        setPdfLoading(true);
-                        setPdfError(null);
-                        await downloadPdf();
-                    } catch (e: any) {
-                        setPdfError(e?.message ?? "Could not generate PDF");
-                    } finally {
-                        setPdfLoading(false);
-                    }
-                }}
-                disabled={pdfLoading}
-            >
+            <button onClick={onClickDownload} disabled={pdfLoading}>
                 {pdfLoading ? "Generating PDF..." : "Download PDF"}
             </button>
 
             {pdfError && <p style={{ color: "red" }}>{pdfError}</p>}
+
             <button style={{ marginTop: "2rem" }} onClick={() => navigate("/")}>
                 Start over
             </button>
 
-            <button style={{ marginTop: "1rem", marginLeft: "1rem" }} onClick={() => downloadPdfDebug()}>
-                Debug REST call
-            </button>
+            {/* -------- Modal dialog -------- */}
+            {isDialogOpen && (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        background: "rgba(0,0,0,0.4)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "1rem",
+                    }}
+                    onClick={() => {
+                        if (!pdfLoading) setIsDialogOpen(false);
+                    }}
+                >
+                    <div
+                        style={{
+                            background: "white",
+                            width: "min(520px, 100%)",
+                            borderRadius: 10,
+                            padding: "1rem",
+                            boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 style={{ marginTop: 0 }}>Export PDF</h2>
+
+                        <div style={{ marginBottom: "0.75rem" }}>
+                            <label style={{ display: "block", fontWeight: 600 }}>
+                                Your name (required)
+                            </label>
+                            <input
+                                type="text"
+                                value={exportData.authorName}
+                                onChange={(e) =>
+                                    setExportData((p) => ({ ...p, authorName: e.target.value }))
+                                }
+                                style={{ width: "100%" }}
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: "0.75rem" }}>
+                            <label style={{ display: "block", fontWeight: 600 }}>
+                                Organization (optional)
+                            </label>
+                            <input
+                                type="text"
+                                value={exportData.organization}
+                                onChange={(e) =>
+                                    setExportData((p) => ({ ...p, organization: e.target.value }))
+                                }
+                                style={{ width: "100%" }}
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: "0.75rem" }}>
+                            <label style={{ display: "block", fontWeight: 600 }}>
+                                Notes (optional)
+                            </label>
+                            <textarea
+                                value={exportData.notes}
+                                onChange={(e) =>
+                                    setExportData((p) => ({ ...p, notes: e.target.value }))
+                                }
+                                rows={4}
+                                style={{ width: "100%" }}
+                            />
+                        </div>
+
+                        {state.draftLink && (
+                            <div style={{ fontSize: "0.9rem", marginBottom: "0.75rem" }}>
+                                Draft link that will be included in the PDF:{" "}
+                                <a href={state.draftLink}>{state.draftLink}</a>
+                            </div>
+                        )}
+
+                        {dialogError && <p style={{ color: "red" }}>{dialogError}</p>}
+
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+                            <button
+                                type="button"
+                                onClick={() => setIsDialogOpen(false)}
+                                disabled={pdfLoading}
+                            >
+                                Cancel
+                            </button>
+                            <button type="button" onClick={onConfirmExport} disabled={pdfLoading}>
+                                {pdfLoading ? "Generating..." : "Generate PDF"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

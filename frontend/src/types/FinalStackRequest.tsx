@@ -6,5 +6,8 @@ export type FinalStackRequest = {
   mobileId?: number;
   draftLink?: string;
   draftId?: string;
+  authorName: string;
+  organization?: string;
+  notes?: string;
 };
 

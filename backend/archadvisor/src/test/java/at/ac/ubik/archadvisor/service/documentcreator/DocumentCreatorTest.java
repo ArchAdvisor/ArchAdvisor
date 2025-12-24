@@ -1,5 +1,8 @@
 package at.ac.ubik.archadvisor.service.documentcreator;
 
+import at.ac.ubik.archadvisor.DTO.FinalStackRequestDto;
+import at.ac.ubik.archadvisor.DTO.QuestionnaireRequestDto;
+import at.ac.ubik.archadvisor.domain.enums.ArchitectureScope;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDResources;
@@ -22,26 +25,37 @@ class DocumentCreatorTest {
     void createStackPdf_containsHeaderTitleScopeAndOptionalSections() throws Exception {
         DocumentCreator creator = new DocumentCreator();
 
+        FinalStackRequestDto finalStack = new FinalStackRequestDto();
+        finalStack.setArchitectureScope(ArchitectureScope.FULL_STACK);
+        finalStack.setAuthorName("Jona");
+        finalStack.setOrganization("");
+        finalStack.setNotes("");
+        finalStack.setDraftLink("http://localhost:3000/");
+        finalStack.setDraftId("draft-123");
+
+        QuestionnaireRequestDto questionnaireDto = new QuestionnaireRequestDto();
+        questionnaireDto.setProjectName("Demo Project");
+
         byte[] pdf = creator.createStackPdf(
-                "Tech Stack Report",
-                "FULL_STACK",
+                finalStack,
                 "Spring Boot",
                 "React",
                 "PostgreSQL",
-                ""
+                null,
+                questionnaireDto,
+                1L
         );
 
         assertNotNull(pdf);
         assertTrue(pdf.length > 500, "PDF should not be tiny/empty");
 
         try (PDDocument doc = PDDocument.load(new ByteArrayInputStream(pdf))) {
-            assertEquals(1, doc.getNumberOfPages());
+            assertEquals(2, doc.getNumberOfPages());
 
             String text = new PDFTextStripper().getText(doc);
 
             assertTrue(text.contains("Archadvisor"));
 
-            assertTrue(text.contains("Tech Stack Report"));
             assertTrue(text.contains("Architecture scope: Full Stack"));
             assertTrue(text.contains("Backend: Spring Boot"));
             assertTrue(text.contains("Frontend: React"));
@@ -53,26 +67,29 @@ class DocumentCreatorTest {
         }
     }
 
-    @Test
-    void createStackPdf_invalidScope_throws() {
-        DocumentCreator creator = new DocumentCreator();
-
-        assertThrows(IllegalArgumentException.class, () ->
-                creator.createStackPdf("x", "NOT_A_SCOPE", null, null, null, null)
-        );
-    }
 
     @Test
     void createStackPdf_includesLogoIfResourcePresent() throws Exception {
         DocumentCreator creator = new DocumentCreator();
+        FinalStackRequestDto finalStack = new FinalStackRequestDto();
+        finalStack.setArchitectureScope(ArchitectureScope.FULL_STACK);
+        finalStack.setAuthorName("Jona");
+        finalStack.setOrganization("");
+        finalStack.setNotes("");
+        finalStack.setDraftLink("http://localhost:3000/");
+        finalStack.setDraftId("draft-123");
+
+        QuestionnaireRequestDto questionnaireDto = new QuestionnaireRequestDto();
+        questionnaireDto.setProjectName("Demo Project");
 
         byte[] pdf = creator.createStackPdf(
-                "Tech Stack Report",
+                finalStack,
                 "BACKEND_ONLY",
                 "Spring Boot",
                 "",
                 "",
-                ""
+                questionnaireDto,
+                1
         );
 
         try (PDDocument doc = PDDocument.load(new ByteArrayInputStream(pdf))) {
@@ -88,7 +105,6 @@ class DocumentCreatorTest {
                     break;
                 }
             }
-
             assertTrue(hasImage, "Expected an embedded logo image XObject");
         }
     }
