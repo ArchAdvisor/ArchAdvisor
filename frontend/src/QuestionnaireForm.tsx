@@ -82,7 +82,6 @@ type QuestionnaireRequest = {
     project_name: string;
     architectureScope: string | null;
     deploymentPreference: DeploymentPreferences | null;
-    //only when deployment == CLOUD TODO
     budgetTier: BudgetTier | null;
     isOpenSource: boolean;
     isServerlessFriendly: boolean
@@ -95,8 +94,11 @@ type QuestionnaireRequest = {
 };
 
 type QuestionnaireResponse = {
-    //TODO: Define according to backend response
-
+    architectureScope: string;
+    backends: any[] | null;
+    frontends: any[] | null;
+    databases: any[] | null;
+    mobileFrameworks: any[] | null;
 };
 
 function QuestionnaireForm() {
@@ -179,13 +181,17 @@ function QuestionnaireForm() {
 
     const navigate = useNavigate();
     const { draftId } = useParams<{ draftId: string }>();
-    const isEditMode = Boolean(draftId);
+    const [effectiveDraftId, setEffectiveDraftId] = useState<string | null>(draftId ?? null);
 
+    useEffect(() => {
+        if (draftId) setEffectiveDraftId(draftId);
+    }, [draftId]);
     // base URL for printing / sharing
     const draftLink = useMemo(() => {
-        if (!draftId) return null;
-        return `${window.location.origin}/draft/${draftId}`;
-    }, [draftId]);
+        if (!effectiveDraftId) return null;
+        return `${window.location.origin}/draft/${effectiveDraftId}`;
+    }, [effectiveDraftId]);
+
     useEffect(() => {
         if (!draftId) return;
 
@@ -217,6 +223,7 @@ function QuestionnaireForm() {
                     teamProgrammingLanguages: dto.teamProgrammingLanguages ?? dto.programmingLanguages ?? [],
                     priorityAspects: dto.priorityAspects ?? formDefaults.priorityAspects,
                     topRankN: dto.topRankN ?? formDefaults.topRankN,
+                    project_name: dto.projectName ?? "",
                 };
 
                 setForm(loaded);
@@ -226,11 +233,9 @@ function QuestionnaireForm() {
                 setLoading(false);
             }
         })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [draftId]);
 
     const saveDraft = async (): Promise<string> => {
-        // Build backend DTO payload (match backend field names)
         const payload = {
             projectName: form.project_name,
             architectureScope: form.architectureScope,
@@ -285,11 +290,12 @@ function QuestionnaireForm() {
 
         try {
             const savedId = await saveDraft();
-
+            setEffectiveDraftId(savedId);
             // if it was created, move user to /draft/:id so they have the shareable link
             if (!draftId) {
                 navigate(`/draft/${savedId}`, { replace: true });
             }
+            const link = `${window.location.origin}/draft/${savedId}`;
             var body = JSON.stringify({
                 projectName: form.project_name,
                 architectureScope: form.architectureScope,
@@ -304,7 +310,6 @@ function QuestionnaireForm() {
                 priorityAspects: form.priorityAspects,
                 topRankN: form.topRankN,
             });
-            console.log("Draft-Id:", savedId);
             const response = await fetch("/api/questionnaire", {
                 method: "POST",
                 headers: {
@@ -318,7 +323,7 @@ function QuestionnaireForm() {
             }
 
             const data: QuestionnaireResponse = await response.json();
-            navigate("/results", { state: { result: data, draftLink: draftLink, draftId: savedId } });
+            navigate("/results", { state: { result: data, draftLink: link, draftId: savedId } });
         } catch (err: any) {
             console.error(err);
             setError(err.message ?? "Unknown error");
