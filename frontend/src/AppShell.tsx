@@ -26,7 +26,6 @@ const steps: StepDef[] = [
 function computeActiveStep(pathname: string) {
   if (pathname.startsWith("/results")) return 1;
   if (pathname.startsWith("/final")) return 2;
-  // drafts should still count as questionnaire step
   if (pathname.startsWith("/draft/")) return 0;
   return 0;
 }
@@ -46,20 +45,44 @@ export function AppShell({ children }: PropsWithChildren) {
   const title = useMemo(() => pageTitle(pathname), [pathname]);
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
-      <AppBar position="sticky" elevation={0} color="default">
-        <Toolbar sx={{ gap: 1.5 }}>
+      <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+    <AppBar position="sticky" elevation={0} color="default">
+      <Toolbar sx={{ gap: 1.5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.25,
+            cursor: "pointer",
+          }}
+          onClick={() => navigate("/")}
+        >
+          <Box
+            component="img"
+            src="/logo_01.png"
+            alt="ArchAdvisor logo"
+            sx={{
+              height: 28,
+              width: "auto",
+              display: "block",
+            }}
+          />
+
           <Typography
             variant="h6"
-            sx={{ fontWeight: 900, letterSpacing: 0.2, cursor: "pointer" }}
-            onClick={() => navigate("/")}
+            sx={{
+              fontWeight: 900,
+              letterSpacing: 0.2,
+              lineHeight: 1,
+            }}
           >
             ArchAdvisor
           </Typography>
+        </Box>
 
-          <Box sx={{ flexGrow: 1 }} />
-        </Toolbar>
-      </AppBar>
+        <Box sx={{ flexGrow: 1 }} />
+      </Toolbar>
+    </AppBar>
 
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
         <Paper sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
