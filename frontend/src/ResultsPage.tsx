@@ -1,7 +1,33 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import type { QuestionnaireResponse, Recommendation } from "./types/QuestionnaireResponse";
-import { useState } from "react";
-import type { PersonalStack } from "./types/PersonalStack";
+import { useState, useMemo } from "react";
+import type { PersonalStack, StackCategory } from "./types/PersonalStack";
+
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  Chip,
+  Divider,
+  Grid,
+  Link,
+  Paper,
+  Stack,
+  Typography,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
+
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 type LocationState = {
   result: QuestionnaireResponse;
@@ -17,17 +43,25 @@ function ResultsPage() {
   const draftLink = state?.draftLink;
   if (!state || !state.result) {
     return (
-      <div style={{ maxWidth: 800, margin: "2rem auto", fontFamily: "sans-serif" }}>
-        <h1>Results</h1>
-        <p>No results available. Please fill out the questionnaire first.</p>
-        <button onClick={() => navigate("/")}>Back to questionnaire</button>
-      </div>
+      <Stack spacing={2}>
+        <Typography variant="h5" sx={{ fontWeight: 900 }}>
+          Results
+        </Typography>
+        <Alert severity="warning">
+          No results available. Please fill out the questionnaire first.
+        </Alert>
+        <Box>
+          <Button variant="contained" onClick={() => navigate("/")}>
+            Back to questionnaire
+          </Button>
+        </Box>
+      </Stack>
     );
   }
 
   const { result } = state;
   const [personalStack, setPersonalStack] = useState<PersonalStack>({ backend: null, frontend: null, database: null, mobile: null });
-  const handleAddToStack = (category: string, rec: Recommendation) => {
+  const handleAddToStack = (category: StackCategory, rec: Recommendation) => {
     setPersonalStack(prev => ({
       ...prev,
       [category]: rec,
@@ -69,152 +103,227 @@ function ResultsPage() {
     });
   };
 
-  const renderSection = (title: string, items: QuestionnaireResponse["backends"], category: string, personalStack: PersonalStack, onAdd: (categrory: string, rec: Recommendation) => void) => {
+  const scopeLabel = useMemo(() => {
+    if (result.architectureScope === "BACKEND_ONLY") return "Backend only";
+    if (result.architectureScope === "FULL_STACK") return "Full stack";
+    if (result.architectureScope === "MOBILE") return "Mobile";
+    return result.architectureScope;
+  }, [result.architectureScope]);
+
+  const renderSection = (title: string, items: QuestionnaireResponse["backends"],
+    category: StackCategory) => {
     //console.log("Rendering section:", items);
     if (!items || items.length === 0) return null;
     return (
-      <section style={{ marginTop: "1.5rem" }}>
-        <h2>{title}</h2>
-        <ul>
-          {items.map((rec, idx) => {
-            const isSelected =
-              personalStack[category]?.technology.id === rec.technology.id;
+      <Accordion defaultExpanded sx={{ mb: 2 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Typography variant="h6" sx={{ fontWeight: 900 }}>
+              {title}
+            </Typography>
+            <Chip label={`${items.length}`} size="small" variant="outlined" />
+          </Stack>
+        </AccordionSummary>
 
-            return (
-              <li
-                key={rec.technology.id ?? idx}
-                style={{
-                  marginBottom: "0.75rem",
-                  padding: "0.5rem",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  backgroundColor: isSelected ? "#f0f8ff" : "white",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <strong>{rec.technology.name}</strong> – total score{" "}
-                  {rec.score.toFixed(2)}
-                  {rec.warnings && rec.warnings.length > 0 && (
-                    <ul style={{ marginTop: "0.25rem", marginLeft: "1.5rem" }}>
-                      {rec.warnings.map((w, i) => (
-                        <li key={i}>{w}</li>
-                      ))}
-                    </ul>
-                  )}
+        <AccordionDetails>
+          <Grid container spacing={2}>
+            {items.map((rec, idx) => {
+              const isSelected = personalStack[category]?.technology.id === rec.technology.id;
 
-                  <div style={{ marginTop: "0.25rem", fontSize: "0.9rem" }}>
-                    {rec.technology.githubUrl && (
-                      <a
-                        href={rec.technology.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ marginRight: "0.75rem" }}
+              return (
+                <Grid size={{ xs: 12, md: 6 }} key={rec.technology.id ?? idx}>
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      height: "100%",
+                      borderColor: isSelected ? "primary.main" : "divider",
+                      bgcolor: isSelected ? "rgba(37, 99, 235, 0.06)" : "background.paper",
+                    }}
+                  >
+                    <CardContent sx={{ pb: 1.5 }}>
+                      <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
+                        <Box>
+                          <Typography variant="h6" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+                            {rec.technology.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            Total score: <b>{rec.score.toFixed(2)}</b>
+                          </Typography>
+                        </Box>
+
+                        {isSelected ? (
+                          <Chip
+                            icon={<CheckCircleIcon />}
+                            label="Selected"
+                            color="primary"
+                            sx={{ fontWeight: 800 }}
+                          />
+                        ) : (
+                          <Chip
+                            icon={<AddCircleOutlineIcon />}
+                            label="Option"
+                            variant="outlined"
+                            sx={{ fontWeight: 800 }}
+                          />
+                        )}
+                      </Stack>
+
+                      {rec.warnings && rec.warnings.length > 0 && (
+                        <Box sx={{ mt: 1.5 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+                            Notes
+                          </Typography>
+                          <Stack spacing={0.5}>
+                            {rec.warnings.map((w, i) => (
+                              <Typography key={i} variant="body2" color="text.secondary">
+                                • {w}
+                              </Typography>
+                            ))}
+                          </Stack>
+                        </Box>
+                      )}
+
+                      <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: "wrap" }}>
+                        {rec.technology.githubUrl && (
+                          <Link
+                            href={rec.technology.githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            underline="hover"
+                            sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+                          >
+                            GitHub <OpenInNewIcon fontSize="inherit" />
+                          </Link>
+                        )}
+                        {rec.technology.documentationUrl && (
+                          <Link
+                            href={rec.technology.documentationUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            underline="hover"
+                            sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+                          >
+                            Documentation <OpenInNewIcon fontSize="inherit" />
+                          </Link>
+                        )}
+                      </Stack>
+                    </CardContent>
+
+                    <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
+                      <Button
+                        type="button"
+                        variant={isSelected ? "outlined" : "contained"}
+                        disabled={isSelected}
+                        onClick={() => handleAddToStack(category, rec)}
+                        fullWidth
                       >
-                        GitHub
-                      </a>
-                    )}
-                    {rec.technology.documentationUrl && (
-                      <a
-                        href={rec.technology.documentationUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Documentation
-                      </a>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onAdd(category, rec)}
-                  disabled={isSelected}
-                  style={{ marginLeft: "1rem" }}
-                >
-                  {isSelected ? "Selected" : "+"}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+                        {isSelected ? "Selected" : "Select"}
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </AccordionDetails>
+      </Accordion>
     );
   };
   return (
-    <div style={{ maxWidth: 800, margin: "2rem auto", fontFamily: "sans-serif" }}>
-      <h1>Recommended Architecture</h1>
-      <p>
-        <strong>Scope:</strong> {result.architectureScope}
-      </p>
+    <Stack spacing={2}>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+        <Typography variant="h5" sx={{ fontWeight: 900, flexGrow: 1 }}>
+          Recommended architecture
+        </Typography>
+        <Chip label={scopeLabel} color="primary" variant="outlined" sx={{ fontWeight: 800 }} />
+      </Stack>
 
-      {/* BACKEND_ONLY */}
+      {/* Recommendations sections */}
       {result.architectureScope === "BACKEND_ONLY" && (
         <>
-          {renderSection("Backend frameworks", result.backends, "backend", personalStack, handleAddToStack)}
-          {renderSection("Databases", result.databases, "database", personalStack, handleAddToStack)}
+          {renderSection("Backend frameworks", result.backends, "backend")}
+          {renderSection("Databases", result.databases, "database")}
         </>
-      )}
-      {/* FULL_STACK */}
-      {result.architectureScope === "FULL_STACK" && (
-        <>
-          {renderSection("Backend frameworks", result.backends, "backend", personalStack, handleAddToStack)}
-          {renderSection("Frontend frameworks", result.frontends, "frontend", personalStack, handleAddToStack)}
-          {renderSection("Databases", result.databases, "database", personalStack, handleAddToStack)}
-        </>
-      )}
-      {/* MOBILE */}
-      {result.architectureScope === "MOBILE" && (
-        <>
-          {renderSection("Mobile frameworks", result.mobileFrameworks, "mobile", personalStack, handleAddToStack)}
-        </>
-      )}
-      {/* Personal stack summary */}
-      <section style={{ marginTop: "2rem", paddingTop: "1rem", borderTop: "1px solid #ccc" }}>
-        <h2>Your selected stack</h2>
-        <ul>
-          {result.architectureScope !== "MOBILE" && (
-            <li>
-              <strong>Backend:</strong>{" "}
-              {personalStack.backend ? personalStack.backend.technology.name : "None selected"}
-            </li>
-          )}
-          {result.architectureScope === "FULL_STACK" && (
-            <li>
-              <strong>Frontend:</strong>{" "}
-              {personalStack.frontend ? personalStack.frontend.technology.name : "None selected"}
-            </li>
-          )}
-          {(result.architectureScope === "FULL_STACK") && (
-            <li>
-              <strong>Database:</strong>{" "}
-              {personalStack.database ? personalStack.database.technology.name : "None selected"}
-            </li>
-          )}
-          {result.architectureScope === "MOBILE" && (
-            <li>
-              <strong>Mobile:</strong>{" "}
-              {personalStack.mobile ? personalStack.mobile.technology.name : "None selected"}
-            </li>
-          )}
-        </ul>
-      </section>
-      {/* Warning message */}
-      {warning && (
-        <p style={{ color: "red", marginTop: "1rem" }}>
-          {warning}
-        </p>
       )}
 
-      <button onClick={handleGoToFinal}>
-        Continue to final stack
-      </button>
-      <button style={{ marginTop: "2rem" }} onClick={() => navigate("/")}>
-        Start over
-      </button>
-    </div>
+      {result.architectureScope === "FULL_STACK" && (
+        <>
+          {renderSection("Backend frameworks", result.backends, "backend")}
+          {renderSection("Frontend frameworks", result.frontends, "frontend")}
+          {renderSection("Databases", result.databases, "database")}
+        </>
+      )}
+
+      {result.architectureScope === "MOBILE" && (
+        <>{renderSection("Mobile frameworks", result.mobileFrameworks, "mobile")}</>
+      )}
+
+      {/* Selected stack summary (sticky-like feel using Paper + spacing) */}
+      <Paper variant="outlined" sx={{ p: 2.5 }}>
+        <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
+          Your selected stack
+        </Typography>
+
+        <Stack spacing={1}>
+          {result.architectureScope !== "MOBILE" && (
+            <Row label="Backend" value={personalStack.backend?.technology.name} />
+          )}
+          {result.architectureScope === "FULL_STACK" && (
+            <Row label="Frontend" value={personalStack.frontend?.technology.name} />
+          )}
+          {result.architectureScope === "FULL_STACK" && (
+            <Row label="Database" value={personalStack.database?.technology.name} />
+          )}
+          {result.architectureScope === "MOBILE" && (
+            <Row label="Mobile" value={personalStack.mobile?.technology.name} />
+          )}
+        </Stack>
+
+        <Divider sx={{ my: 2 }} />
+
+        {warning && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {warning}
+          </Alert>
+        )}
+
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={handleGoToFinal}
+            endIcon={<ArrowForwardIcon />}
+            sx={{ flex: 1 }}
+          >
+            Continue to final stack
+          </Button>
+          <Button
+            variant="outlined"
+            size="large"
+            onClick={() => navigate("/")}
+            startIcon={<RestartAltIcon />}
+          >
+            Start over
+          </Button>
+        </Stack>
+      </Paper>
+    </Stack>
+  );
+}
+
+function Row({ label, value }: { label: string; value?: string }) {
+  const hasValue = Boolean(value);
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+      {hasValue ? (
+        <Chip label={value} color="primary" variant="outlined" sx={{ fontWeight: 800 }} />
+      ) : (
+        <Chip label="None selected" variant="outlined" />
+      )}
+    </Stack>
   );
 }
 
