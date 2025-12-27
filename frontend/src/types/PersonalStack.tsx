@@ -6,3 +6,5 @@ export type PersonalStack = {
     database: Recommendation | null;
     mobile: Recommendation | null;
 };
+
+export type StackCategory = keyof PersonalStack;
