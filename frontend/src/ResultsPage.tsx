@@ -28,6 +28,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { StarRateTwoTone } from "@mui/icons-material";
 
 type LocationState = {
   result: QuestionnaireResponse;
@@ -38,7 +39,6 @@ type LocationState = {
 function ResultsPage() {
   const navigate = useNavigate();
   const location = useLocation();
-
   const state = location.state as LocationState | null;
   const draftLink = state?.draftLink;
   if (!state || !state.result) {
@@ -112,7 +112,6 @@ function ResultsPage() {
 
   const renderSection = (title: string, items: QuestionnaireResponse["backends"],
     category: StackCategory) => {
-    //console.log("Rendering section:", items);
     if (!items || items.length === 0) return null;
     return (
       <Accordion defaultExpanded sx={{ mb: 2 }}>
