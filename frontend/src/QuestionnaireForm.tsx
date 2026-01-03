@@ -125,6 +125,9 @@ function QuestionnaireForm() {
         teamProgrammingLanguages: [],
         topRankN: 4,
     });
+    const showBudgetTier = form.deploymentPreference === DeploymentPreferences.CLOUD_NATIVE ||
+        form.deploymentPreference === DeploymentPreferences.SERVERLESS ||
+        form.deploymentPreference === DeploymentPreferences.PAAS;
     const formDefaults: QuestionnaireRequest = {
         project_name: "",
         architectureScope: "BACKEND_ONLY",
@@ -445,25 +448,26 @@ function QuestionnaireForm() {
                     </FormControl>
 
                     {/* Budget tier */}
-                    <FormControl fullWidth>
-                        <InputLabel id="budget-label">Budget tier</InputLabel>
-                        <Select
-                            labelId="budget-label"
-                            label="Budget tier"
-                            value={form.budgetTier ?? ""}
-                            onChange={(e) =>
-                                setForm({
-                                    ...form,
-                                    budgetTier: (e.target.value as BudgetTier),
-                                })
-                            }
-                        >
-                            <MenuItem value="">Select an option</MenuItem>
-                            <MenuItem value={BudgetTier.LOW}>Low</MenuItem>
-                            <MenuItem value={BudgetTier.MEDIUM}>Medium</MenuItem>
-                            <MenuItem value={BudgetTier.HIGH}>High</MenuItem>
-                        </Select>
-                    </FormControl>
+                    {showBudgetTier && (
+                        <FormControl fullWidth>
+                            <InputLabel id="budget-label">Budget tier</InputLabel>
+                            <Select
+                                labelId="budget-label"
+                                label="Budget tier"
+                                value={form.budgetTier ?? ""}
+                                onChange={(e) =>
+                                    setForm({
+                                        ...form,
+                                        budgetTier: (e.target.value as BudgetTier),
+                                    })
+                                }
+                            >
+                                <MenuItem value="">Select an option</MenuItem>
+                                <MenuItem value={BudgetTier.LOW}>Low</MenuItem>
+                                <MenuItem value={BudgetTier.MEDIUM}>Medium</MenuItem>
+                                <MenuItem value={BudgetTier.HIGH}>High</MenuItem>
+                            </Select>
+                        </FormControl>)}
 
                     {/* Serverless friendly */}
                     <Paper variant="outlined" sx={{ p: 2 }}>
