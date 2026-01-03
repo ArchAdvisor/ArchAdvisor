@@ -10,7 +10,10 @@ import {
   Stepper,
   Toolbar,
   Typography,
+  Stack,
+  Chip,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 
 type StepDef = {
   label: string;
@@ -45,72 +48,115 @@ export function AppShell({ children }: PropsWithChildren) {
   const title = useMemo(() => pageTitle(pathname), [pathname]);
 
   return (
-      <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
-    <AppBar position="sticky" elevation={0} color="default">
-      <Toolbar sx={{ gap: 1.5 }}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.25,
-            cursor: "pointer",
-          }}
-          onClick={() => navigate("/")}
-        >
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+      <AppBar
+        position="sticky"
+        elevation={0}
+        color="default"
+        sx={{ borderBottom: 1, borderColor: "divider" }}
+      >
+        <Toolbar sx={{ gap: 1.5 }}>
           <Box
-            component="img"
-            src="/logo_01.png"
-            alt="ArchAdvisor logo"
             sx={{
-              height: 28,
-              width: "auto",
-              display: "block",
+              display: "flex",
+              alignItems: "center",
+              gap: 1.25,
+              cursor: "pointer",
             }}
-          />
-
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 900,
-              letterSpacing: 0.2,
-              lineHeight: 1,
-            }}
+            onClick={() => navigate("/")}
           >
-            ArchAdvisor
-          </Typography>
-        </Box>
+            <Box
+              component="img"
+              src="/logo_01.png"
+              alt="ArchAdvisor logo"
+              sx={{
+                height: 28,
+                width: "auto",
+                display: "block",
+              }}
+            />
 
-        <Box sx={{ flexGrow: 1 }} />
-      </Toolbar>
-    </AppBar>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 900,
+                letterSpacing: 0.2,
+                lineHeight: 1,
+              }}
+            >
+              ArchAdvisor
+            </Typography>
+          </Box>
 
-      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
-        <Paper sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-          <Typography variant="h4" sx={{ fontWeight: 900, mb: 0.5 }}>
-            {title}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Answer a few questions, review recommendations, then export your selected stack to PDF.
-          </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+        </Toolbar>
+      </AppBar>
 
-          {/* Stepper for the main flow only */}
-          {!pathname.startsWith("/draft/") && (
-            <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-              {steps.map((s) => (
-                <Step key={s.path} onClick={() => navigate(s.path)} sx={{ cursor: "pointer" }}>
-                  <StepLabel>{s.label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          )}
+      <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
+        <Grid container spacing={3} alignItems="flex-start">
+          <Grid size={{ xs: 12, md: 8 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+              <Typography variant="h4" sx={{ fontWeight: 900, mb: 0.5 }}>
+                {title}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Answer a few questions, review recommendations, then export your selected stack to PDF.
+              </Typography>
 
-          {children}
-        </Paper>
+              {!pathname.startsWith("/draft/") && (
+                <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+                  {steps.map((s) => (
+                    <Step
+                      key={s.path}
+                      onClick={() => navigate(s.path)}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <StepLabel>{s.label}</StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
+              )}
+
+              {children}
+            </Paper>
+          </Grid>
+
+          {/* Right column: info panel (desktop only) */}
+          <Grid size={{ xs: 12, md: 4 }} sx={{ display: "block" }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                mt: 8,
+                p: 2.5,
+                position: "sticky",
+                top: 88,
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontWeight: 900, mb: 1 }}>
+                Overview
+              </Typography>
+
+              <Stack spacing={1.25}>
+                <Typography variant="body2" color="text.secondary">
+                  Drafts can be shared and resumed. After submitting once, copy the link from the banner.
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary">
+                  Recommendations depend mainly on scope, team constraints, and priority ranking.
+                </Typography>
+
+                <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+                  <Chip label="Drafts" size="small" variant="outlined" />
+                  <Chip label="Selection" size="small" variant="outlined" />
+                  <Chip label="PDF Export" size="small" variant="outlined" />
+                </Stack>
+              </Stack>
+            </Paper>
+          </Grid>
+        </Grid>
 
         <Box sx={{ py: 3, textAlign: "center", color: "text.secondary" }}>
-          <Typography variant="body2">
-            © {new Date().getFullYear()} ArchAdvisor
-          </Typography>
+          <Typography variant="body2">© {new Date().getFullYear()} ArchAdvisor</Typography>
         </Box>
       </Container>
     </Box>
