@@ -3,6 +3,7 @@ package at.ac.ubik.archadvisor.service.documentcreator;
 import at.ac.ubik.archadvisor.DTO.FinalStackRequestDto;
 import at.ac.ubik.archadvisor.DTO.QuestionnaireRequestDto;
 import at.ac.ubik.archadvisor.domain.enums.ArchitectureScope;
+import at.ac.ubik.archadvisor.domain.enums.DeploymentPreference;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDResources;
@@ -106,6 +107,57 @@ class DocumentCreatorTest {
                 }
             }
             assertTrue(hasImage, "Expected an embedded logo image XObject");
+        }
+    }
+
+    @Test
+    void createStackPdf_withoutBudgetTierOption() throws Exception {
+        DocumentCreator creator = new DocumentCreator();
+        FinalStackRequestDto finalStack = new FinalStackRequestDto();
+        finalStack.setArchitectureScope(ArchitectureScope.FULL_STACK);
+        finalStack.setAuthorName("Max");
+        QuestionnaireRequestDto questionnaireDto = new QuestionnaireRequestDto();
+        questionnaireDto.setProjectName("Triple3");
+        questionnaireDto.setDeploymentPreference(DeploymentPreference.SELF_HOSTED);
+
+        byte[] pdf = creator.createStackPdf(
+                finalStack,
+                "Spring Boot",
+                "React",
+                "PostgreSQL",
+                null,
+                questionnaireDto,
+                1L
+        );
+        try (PDDocument doc = PDDocument.load(new ByteArrayInputStream(pdf))) {
+            String text = new PDFTextStripper().getText(doc);
+            assertFalse(text.contains("Budget Tier"), "This deploymentMode should not contain a Budget Tier");
+        }
+    }
+
+    @Test
+    void createStackPdf_withBudgetTierOption() throws Exception {
+        DocumentCreator creator = new DocumentCreator();
+        FinalStackRequestDto finalStack = new FinalStackRequestDto();
+        finalStack.setArchitectureScope(ArchitectureScope.FULL_STACK);
+        finalStack.setAuthorName("Max");
+        QuestionnaireRequestDto questionnaireDto = new QuestionnaireRequestDto();
+        questionnaireDto.setProjectName("Triple3");
+        questionnaireDto.setDeploymentPreference(DeploymentPreference.PAAS);
+
+        byte[] pdf = creator.createStackPdf(
+                finalStack,
+                "Spring Boot",
+                "React",
+                "PostgreSQL",
+                null,
+                questionnaireDto,
+                1L
+        );
+        try (PDDocument doc = PDDocument.load(new ByteArrayInputStream(pdf))) {
+            String text = new PDFTextStripper().getText(doc);
+            System.out.println(text);
+            assertTrue(text.contains("Budget tier"), "This deploymentMode should contain a Budget Tier");
         }
     }
 }
