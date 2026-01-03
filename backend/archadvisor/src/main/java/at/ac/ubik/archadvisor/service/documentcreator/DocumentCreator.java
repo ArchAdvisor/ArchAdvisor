@@ -2,6 +2,7 @@ package at.ac.ubik.archadvisor.service.documentcreator;
 
 import at.ac.ubik.archadvisor.DTO.FinalStackRequestDto;
 import at.ac.ubik.archadvisor.DTO.QuestionnaireRequestDto;
+import at.ac.ubik.archadvisor.domain.enums.DeploymentPreference;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -137,13 +138,13 @@ public class DocumentCreator {
                                     ? humanizeEnum(questionnaire.getDeploymentPreference().name())
                                     : "N/A",
                             y2);
-
-                    y2 = writeKeyValue(cs2, page2, "Budget tier",
-                            questionnaire.getBudgetTier() != null
-                                    ? humanizeEnum(questionnaire.getBudgetTier().name())
-                                    : "N/A",
-                            y2);
-
+                    if (needsBudgetTier(questionnaire.getDeploymentPreference())) {
+                        y2 = writeKeyValue(cs2, page2, "Budget tier",
+                                questionnaire.getBudgetTier() != null
+                                        ? humanizeEnum(questionnaire.getBudgetTier().name())
+                                        : "N/A",
+                                y2);
+                    }
                     y2 = writeKeyValue(cs2, page2, "Expected users",
                             questionnaire.getExpectedUsers() != null
                                     ? questionnaire.getExpectedUsers().toString()
@@ -387,5 +388,11 @@ public class DocumentCreator {
                 cs.endText();
             }
         }
+    }
+
+    private boolean needsBudgetTier(DeploymentPreference dp) {
+        return dp == DeploymentPreference.PAAS
+                || dp == DeploymentPreference.CLOUD_NATIVE
+                || dp == DeploymentPreference.SERVERLESS;
     }
 }
