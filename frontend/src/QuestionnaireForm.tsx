@@ -1,6 +1,30 @@
 import { type FormEvent, useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
+import {
+    Alert,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Divider,
+    FormControl,
+    FormControlLabel,
+    InputLabel,
+    List,
+    ListItem,
+    ListItemText,
+    MenuItem,
+    Paper,
+    Select,
+    Stack,
+    TextField,
+    Typography,
+    IconButton,
+    Tooltip,
+} from "@mui/material";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
 
 const ProgrammingLanguages = {
@@ -58,7 +82,6 @@ type QuestionnaireRequest = {
     project_name: string;
     architectureScope: string | null;
     deploymentPreference: DeploymentPreferences | null;
-    //only when deployment == CLOUD TODO
     budgetTier: BudgetTier | null;
     isOpenSource: boolean;
     isServerlessFriendly: boolean
@@ -71,8 +94,11 @@ type QuestionnaireRequest = {
 };
 
 type QuestionnaireResponse = {
-    //TODO: Define according to backend response
-
+    architectureScope: string;
+    backends: any[] | null;
+    frontends: any[] | null;
+    databases: any[] | null;
+    mobileFrameworks: any[] | null;
 };
 
 function QuestionnaireForm() {
@@ -155,13 +181,17 @@ function QuestionnaireForm() {
 
     const navigate = useNavigate();
     const { draftId } = useParams<{ draftId: string }>();
-    const isEditMode = Boolean(draftId);
+    const [effectiveDraftId, setEffectiveDraftId] = useState<string | null>(draftId ?? null);
 
+    useEffect(() => {
+        if (draftId) setEffectiveDraftId(draftId);
+    }, [draftId]);
     // base URL for printing / sharing
     const draftLink = useMemo(() => {
-        if (!draftId) return null;
-        return `${window.location.origin}/draft/${draftId}`;
-    }, [draftId]);
+        if (!effectiveDraftId) return null;
+        return `${window.location.origin}/draft/${effectiveDraftId}`;
+    }, [effectiveDraftId]);
+
     useEffect(() => {
         if (!draftId) return;
 
@@ -193,6 +223,7 @@ function QuestionnaireForm() {
                     teamProgrammingLanguages: dto.teamProgrammingLanguages ?? dto.programmingLanguages ?? [],
                     priorityAspects: dto.priorityAspects ?? formDefaults.priorityAspects,
                     topRankN: dto.topRankN ?? formDefaults.topRankN,
+                    project_name: dto.projectName ?? "",
                 };
 
                 setForm(loaded);
@@ -202,11 +233,9 @@ function QuestionnaireForm() {
                 setLoading(false);
             }
         })();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [draftId]);
 
     const saveDraft = async (): Promise<string> => {
-        // Build backend DTO payload (match backend field names)
         const payload = {
             projectName: form.project_name,
             architectureScope: form.architectureScope,
@@ -261,11 +290,12 @@ function QuestionnaireForm() {
 
         try {
             const savedId = await saveDraft();
-
+            setEffectiveDraftId(savedId);
             // if it was created, move user to /draft/:id so they have the shareable link
             if (!draftId) {
                 navigate(`/draft/${savedId}`, { replace: true });
             }
+            const link = `${window.location.origin}/draft/${savedId}`;
             var body = JSON.stringify({
                 projectName: form.project_name,
                 architectureScope: form.architectureScope,
@@ -280,7 +310,6 @@ function QuestionnaireForm() {
                 priorityAspects: form.priorityAspects,
                 topRankN: form.topRankN,
             });
-            console.log("Draft-Id:", savedId);
             const response = await fetch("/api/questionnaire", {
                 method: "POST",
                 headers: {
@@ -294,7 +323,7 @@ function QuestionnaireForm() {
             }
 
             const data: QuestionnaireResponse = await response.json();
-            navigate("/results", { state: { result: data, draftLink: draftLink, draftId: savedId } });
+            navigate("/results", { state: { result: data, draftLink: link, draftId: savedId } });
         } catch (err: any) {
             console.error(err);
             setError(err.message ?? "Unknown error");
@@ -303,292 +332,343 @@ function QuestionnaireForm() {
         }
     };
 
+    const selectedLanguageLabels = useMemo(() => {
+        const map: Record<ProgrammingLanguages, string> = {
+            [ProgrammingLanguages.JAVASCRIPT]: "JavaScript",
+            [ProgrammingLanguages.PYTHON]: "Python",
+            [ProgrammingLanguages.JAVA]: "Java",
+            [ProgrammingLanguages.CSHARP]: "C#",
+        };
+        return form.teamProgrammingLanguages.map((l) => map[l]);
+    }, [form.teamProgrammingLanguages]);
+
     return (
-        <div style={{ maxWidth: 500, margin: "2rem auto", fontFamily: "sans-serif" }}>
-            <h1>Questionnaire</h1>
+        <Box>
             {draftLink && (
-                <div style={{ marginBottom: "1rem", padding: "0.75rem", border: "1px solid #ccc", borderRadius: 6 }}>
-                    <div style={{ fontSize: "0.9rem", marginBottom: "0.25rem" }}>
-                        Editing draft:
-                    </div>
-                    <a href={draftLink}>{draftLink}</a>
-                    <button
-                        type="button"
-                        style={{ marginLeft: "0.5rem" }}
-                        onClick={() => navigator.clipboard.writeText(draftLink)}
-                    >
-                        Copy
-                    </button>
-                </div>
+                <Alert
+                    severity="info"
+                    sx={{ mb: 3 }}
+                    action={
+                        <Tooltip title="Copy link">
+                            <IconButton
+                                color="inherit"
+                                size="small"
+                                onClick={() => navigator.clipboard.writeText(draftLink)}
+                            >
+                                <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    }
+                >
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        Editing draft
+                    </Typography>
+                    <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
+                        {draftLink}
+                    </Typography>
+                </Alert>
             )}
 
             <form onSubmit={handleSubmit}>
-                {/*Project name */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label>
-                        Name of the Project:
-                        <input
-                            type="text"
-                            value={form.project_name}
-                            onChange={(e) =>
-                                setForm({ ...form, project_name: e.target.value })
-                            }
-                            style={{ marginLeft: "0.5rem", width: "100%" }}
-                        />
-                    </label>
-                </div>
-                {/* Scope */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label>
-                        Architecture Scope:
-                        <select
+                <Stack spacing={3}>
+                    {/* Project name */}
+                    <TextField
+                        label="Name of the project"
+                        value={form.project_name}
+                        onChange={(e) => setForm({ ...form, project_name: e.target.value })}
+                        fullWidth
+                    />
+
+                    {/* Scope */}
+                    <FormControl fullWidth>
+                        <InputLabel id="scope-label">Architecture scope</InputLabel>
+                        <Select
+                            labelId="scope-label"
+                            label="Architecture scope"
                             value={form.architectureScope ?? ""}
                             onChange={(e) =>
                                 setForm({
                                     ...form,
-                                    architectureScope: e.target.value === "" ? null : e.target.value,
+                                    architectureScope: e.target.value === "" ? null : (e.target.value as string),
                                 })
                             }
-                            style={{ marginLeft: "0.5rem", width: "100%" }}
                         >
-                            <option value="">Select an option</option>
-                            <option value={"BACKEND_ONLY"}>Backend Only</option>
-                            <option value={"FULL_STACK"}>Full Stack</option>
-                            <option value={"MOBILE"}>Mobile</option>
-                        </select>
-                    </label>
-                </div>
-                {/*isOpenSource*/}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label>
-                        Only propose OpenSource frameworks?
-                        <input
-                            type="checkbox"
-                            checked={form.isOpenSource}
-                            onChange={(e) =>
-                                setForm({ ...form, isOpenSource: e.target.checked })
-                            }
-                            style={{ marginLeft: "0.5rem" }}
-                        />
-                    </label>
-                </div>
+                            <MenuItem value="">Select an option</MenuItem>
+                            <MenuItem value="BACKEND_ONLY">Backend only</MenuItem>
+                            <MenuItem value="FULL_STACK">Full stack</MenuItem>
+                            <MenuItem value="MOBILE">Mobile</MenuItem>
+                        </Select>
+                    </FormControl>
 
-                {/* Deployment Preference */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label> What is your deployment preference?
-                        <select
+                    {/* Open source */}
+                    <Paper variant="outlined" sx={{ p: 2 }}>
+                        <FormControlLabel
+                            control={
+                                <input
+                                    type="checkbox"
+                                    checked={form.isOpenSource}
+                                    onChange={(e) => setForm({ ...form, isOpenSource: e.target.checked })}
+                                    style={{ accentColor: "currentColor" }}
+                                />
+                            }
+                            label="Only propose open-source frameworks"
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                            Restricts recommendations to open-source options when possible.
+                        </Typography>
+                    </Paper>
+
+                    {/* Deployment preference */}
+                    <FormControl fullWidth>
+                        <InputLabel id="deploy-label">Deployment preference</InputLabel>
+                        <Select
+                            labelId="deploy-label"
+                            label="Deployment preference"
                             value={form.deploymentPreference ?? ""}
                             onChange={(e) =>
                                 setForm({
                                     ...form,
-                                    deploymentPreference: e.target.value === "" ? null : (e.target.value as DeploymentPreferences),
+                                    deploymentPreference:
+                                        (e.target.value as DeploymentPreferences),
                                 })
                             }
-                            style={{ marginLeft: "0.5rem", width: "100%" }}
                         >
-                            <option value="">Select an option</option>
-                            <option value={DeploymentPreferences.SELF_HOSTED}>Self-Hosted</option>
-                            <option value={DeploymentPreferences.PAAS}>Platform as a Service (PaaS)</option>
-                            <option value={DeploymentPreferences.CLOUD_NATIVE}>Cloud-Native</option>
-                            <option value={DeploymentPreferences.SERVERLESS}>Serverless</option>
-                            <option value={DeploymentPreferences.KUBERNETES}>Kubernetes</option>
-                            <option value={DeploymentPreferences.ON_PREM}>On-Premises</option>
-                            <option value={DeploymentPreferences.HYBRID}>Hybrid</option>
-                        </select>
-                    </label>
-                </div>
-                {/* BudgetTier */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label>
-                        Which budgetTier are you planning to use?:
-                        <select
+                            <MenuItem value="">Select an option</MenuItem>
+                            <MenuItem value={DeploymentPreferences.SELF_HOSTED}>Self-hosted</MenuItem>
+                            <MenuItem value={DeploymentPreferences.PAAS}>Platform as a Service (PaaS)</MenuItem>
+                            <MenuItem value={DeploymentPreferences.CLOUD_NATIVE}>Cloud-native</MenuItem>
+                            <MenuItem value={DeploymentPreferences.SERVERLESS}>Serverless</MenuItem>
+                            <MenuItem value={DeploymentPreferences.KUBERNETES}>Kubernetes</MenuItem>
+                            <MenuItem value={DeploymentPreferences.ON_PREM}>On-premises</MenuItem>
+                            <MenuItem value={DeploymentPreferences.HYBRID}>Hybrid</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    {/* Budget tier */}
+                    <FormControl fullWidth>
+                        <InputLabel id="budget-label">Budget tier</InputLabel>
+                        <Select
+                            labelId="budget-label"
+                            label="Budget tier"
                             value={form.budgetTier ?? ""}
                             onChange={(e) =>
                                 setForm({
                                     ...form,
-                                    budgetTier: e.target.value === "" ? null : (e.target.value as BudgetTier),
+                                    budgetTier: (e.target.value as BudgetTier),
                                 })
                             }
-                            style={{ marginLeft: "0.5rem", width: "100%" }}
                         >
-                            <option value="">Select an option</option>
-                            <option value={BudgetTier.LOW}>Low</option>
-                            <option value={BudgetTier.MEDIUM}>Medium</option>
-                            <option value={BudgetTier.HIGH}>High</option>
-                        </select>
-                    </label>
-                </div>
-                {/*isServerlessFriendly*/}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label>
-                        Should the selected technologies be serverless friendly?
-                        <input
-                            type="checkbox"
-                            checked={form.isServerlessFriendly}
-                            onChange={(e) =>
-                                setForm({ ...form, isServerlessFriendly: e.target.checked })
+                            <MenuItem value="">Select an option</MenuItem>
+                            <MenuItem value={BudgetTier.LOW}>Low</MenuItem>
+                            <MenuItem value={BudgetTier.MEDIUM}>Medium</MenuItem>
+                            <MenuItem value={BudgetTier.HIGH}>High</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    {/* Serverless friendly */}
+                    <Paper variant="outlined" sx={{ p: 2 }}>
+                        <FormControlLabel
+                            control={
+                                <input
+                                    type="checkbox"
+                                    checked={form.isServerlessFriendly}
+                                    onChange={(e) =>
+                                        setForm({ ...form, isServerlessFriendly: e.target.checked })
+                                    }
+                                    style={{ accentColor: "currentColor" }}
+                                />
                             }
-                            style={{ marginLeft: "0.5rem" }}
+                            label="Prefer serverless-friendly technologies"
                         />
-                    </label>
-                </div>
-                {/*Number of expected users*/}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label>
-                        Expected Number of Users:
-                        <input
-                            type="number"
-                            value={form.expectedUsers ?? ""}
-                            min={1}
-                            onChange={(e) =>
+                        <Typography variant="body2" color="text.secondary">
+                            Prioritizes options that work well with serverless/managed execution models.
+                        </Typography>
+                    </Paper>
+
+                    {/* Expected users */}
+                    <TextField
+                        label="Expected number of users"
+                        type="number"
+                        value={form.expectedUsers ?? ""}
+                        inputProps={{ min: 1 }}
+                        onChange={(e) =>
+                            setForm({
+                                ...form,
+                                expectedUsers: e.target.value === "" ? null : Number(e.target.value),
+                            })
+                        }
+                        fullWidth
+                    />
+
+                    {/* Team size */}
+                    <TextField
+                        label="Team size"
+                        type="number"
+                        value={form.teamSize ?? ""}
+                        inputProps={{ min: 1 }}
+                        onChange={(e) =>
+                            setForm({
+                                ...form,
+                                teamSize: e.target.value === "" ? 1 : Number(e.target.value),
+                            })
+                        }
+                        fullWidth
+                    />
+
+                    {/* Experience level */}
+                    <TextField
+                        label="Experience level"
+                        value={form.experienceLevel}
+                        onChange={(e) => setForm({ ...form, experienceLevel: e.target.value })}
+                        fullWidth
+                        placeholder="e.g., junior-heavy, mixed, senior-heavy"
+                    />
+
+                    {/* Languages */}
+                    <Paper variant="outlined" sx={{ p: 2 }}>
+                        <Stack spacing={1.5}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                Team programming languages
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Select one or more.
+                            </Typography>
+
+                            <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+                                {(
+                                    [
+                                        [ProgrammingLanguages.JAVASCRIPT, "JavaScript"],
+                                        [ProgrammingLanguages.PYTHON, "Python"],
+                                        [ProgrammingLanguages.JAVA, "Java"],
+                                        [ProgrammingLanguages.CSHARP, "C#"],
+                                    ] as const
+                                ).map(([value, label]) => {
+                                    const selected = form.teamProgrammingLanguages.includes(value);
+                                    return (
+                                        <Chip
+                                            key={value}
+                                            label={label}
+                                            clickable
+                                            color={selected ? "primary" : "default"}
+                                            variant={selected ? "filled" : "outlined"}
+                                            onClick={() => toggleLanguage(value)}
+                                            sx={{ fontWeight: 700 }}
+                                        />
+                                    );
+                                })}
+                            </Stack>
+
+                            {selectedLanguageLabels.length > 0 && (
+                                <Typography variant="body2" color="text.secondary">
+                                    Selected: {selectedLanguageLabels.join(", ")}
+                                </Typography>
+                            )}
+                        </Stack>
+                    </Paper>
+
+                    {/* Priority ranking */}
+                    <Paper variant="outlined" sx={{ p: 2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
+                            Priority ranking
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            Rank aspects by importance (top = most important).
+                        </Typography>
+
+                        <List dense>
+                            {form.priorityAspects.map((aspect, idx) => (
+                                <ListItem
+                                    key={aspect}
+                                    divider={idx !== form.priorityAspects.length - 1}
+                                    secondaryAction={
+                                        <Stack direction="row" spacing={0.5}>
+                                            <Tooltip title="Move up">
+                                                <span>
+                                                    <IconButton
+                                                        edge="end"
+                                                        size="small"
+                                                        onClick={() => moveAspect(idx, -1)}
+                                                        disabled={idx === 0}
+                                                    >
+                                                        <ArrowUpwardIcon fontSize="small" />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                            <Tooltip title="Move down">
+                                                <span>
+                                                    <IconButton
+                                                        edge="end"
+                                                        size="small"
+                                                        onClick={() => moveAspect(idx, 1)}
+                                                        disabled={idx === form.priorityAspects.length - 1}
+                                                    >
+                                                        <ArrowDownwardIcon fontSize="small" />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                        </Stack>
+                                    }
+                                >
+                                    <ListItemText
+                                        primary={
+                                            <Typography sx={{ fontWeight: 700 }}>
+                                                {idx + 1}. {PRIORITY_ASPECT_LABELS[aspect]}
+                                            </Typography>
+                                        }
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    </Paper>
+
+                    {/* TopRankN */}
+                    <TextField
+                        label="Number of recommendations to display"
+                        type="number"
+                        value={form.topRankN ?? ""}
+                        inputProps={{ min: 1 }}
+                        onChange={(e) => {
+                            const val = Number(e.target.value);
+                            if (val >= 1) {
                                 setForm({
                                     ...form,
-                                    expectedUsers: e.target.value === "" ? null : Number(e.target.value),
-                                })
+                                    topRankN: e.target.value === "" ? 4 : Number(e.target.value),
+                                });
                             }
-                            style={{ marginLeft: "0.5rem", width: "100%" }}
-                        />
-                    </label>
-                </div>
-                {/* Team Size */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label>
-                        Team Size:
-                        <input
-                            type="number"
-                            min={1}
-                            value={form.teamSize ?? ""}
-                            onChange={(e) =>
-                                setForm({
-                                    ...form,
-                                    teamSize: e.target.value === "" ? 1 : Number(e.target.value),
-                                })
-                            }
-                            style={{ marginLeft: "0.5rem", width: "100%" }}
-                        />
-                    </label>
-                </div>
-                {/* Experience Level */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label>
-                        Experience Level:
-                        <input
-                            type="text"
-                            value={form.experienceLevel}
-                            onChange={(e) =>
-                                setForm({ ...form, experienceLevel: e.target.value })
-                            }
-                            style={{ marginLeft: "0.5rem", width: "100%" }}
-                        />
-                    </label>
-                </div>
+                        }}
+                        fullWidth
+                    />
 
-                {/* Language familiarity */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <p>Select one or more languages:</p>
+                    <Divider />
 
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={form.teamProgrammingLanguages.includes(ProgrammingLanguages.JAVASCRIPT)}
-                            onChange={() => toggleLanguage(ProgrammingLanguages.JAVASCRIPT)}
-                        />
-                        JavaScript
-                    </label>
-                    <br />
+                    {/* Submit */}
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            size="large"
+                            disabled={loading}
+                            sx={{ minWidth: 220 }}
+                        >
+                            {loading ? (
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                    <CircularProgress size={18} />
+                                    <span>Sending...</span>
+                                </Stack>
+                            ) : (
+                                "Submit and save as draft"
+                            )}
+                        </Button>
 
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={form.teamProgrammingLanguages.includes(ProgrammingLanguages.PYTHON)}
-                            onChange={() => toggleLanguage(ProgrammingLanguages.PYTHON)}
-                        />
-                        Python
-                    </label>
-                    <br />
+                        <Typography variant="body2" color="text.secondary">
+                            Your inputs are saved as a draft and used to generate recommendations.
+                        </Typography>
+                    </Stack>
 
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={form.teamProgrammingLanguages.includes(ProgrammingLanguages.JAVA)}
-                            onChange={() => toggleLanguage(ProgrammingLanguages.JAVA)}
-                        />
-                        Java
-                    </label>
-                    <br />
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={form.teamProgrammingLanguages.includes(ProgrammingLanguages.CSHARP)}
-                            onChange={() => toggleLanguage(ProgrammingLanguages.CSHARP)}
-                        />
-                        C#
-                    </label>
-                </div>
-                {/* Priority Aspects Ranking */}
-                <div style={{ marginBottom: "1rem" }}>
-                    <p>Rank the aspects by priority (top = most important):</p>
-
-                    <ol>
-                        {form.priorityAspects.map((aspect, idx) => (
-                            <li key={aspect} style={{ marginBottom: "0.5rem" }}>
-                                {PRIORITY_ASPECT_LABELS[aspect]}
-                                <span style={{ marginLeft: "0.5rem" }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => moveAspect(idx, -1)}
-                                        disabled={idx === 0}
-                                        style={{ marginRight: "0.25rem" }}
-                                    >
-                                        ↑
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => moveAspect(idx, 1)}
-                                        disabled={idx === form.priorityAspects.length - 1}
-                                    >
-                                        ↓
-                                    </button>
-                                </span>
-                            </li>
-                        ))}
-                    </ol>
-                </div>
-                {/*TopRankN*/}
-                <div style={{ marginBottom: "1rem" }}>
-                    <label>
-                        What number of top rank recommendation should be displayed?:
-                        <input
-                            type="number"
-                            value={form.topRankN ?? ""}
-                            min={1}
-                            onChange={(e) => {
-                                const val = Number(e.target.value);
-                                if (val >= 1) {
-                                    setForm({
-                                        ...form,
-                                        topRankN: e.target.value === "" ? 4 : Number(e.target.value),
-                                    });
-                                }
-                            }}
-                            style={{ marginLeft: "0.5rem", width: "100%" }}
-                        />
-                    </label>
-                </div>
-                {/* Submit Button */}
-                <button type="submit" disabled={loading}>
-                    {loading ? "Sending..." : "Submit and save as draft"}
-                </button>
+                    {error && <Alert severity="error">Error: {error}</Alert>}
+                </Stack>
             </form>
-
-            {error && (
-                <p style={{ color: "red", marginTop: "1rem" }}>
-                    Error: {error}
-                </p>
-            )}
-
-        </div>
+        </Box>
     );
 }
 

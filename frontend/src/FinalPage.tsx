@@ -2,6 +2,26 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import type { QuestionnaireResponse, Recommendation } from "./types/QuestionnaireResponse";
 import type { FinalStackRequest } from "./types/FinalStackRequest";
+import {
+    Alert,
+    Button,
+    Chip,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    Link,
+    Paper,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
+
+import DownloadIcon from "@mui/icons-material/Download";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 type PersonalStack = {
     backend: Recommendation | null;
@@ -28,35 +48,31 @@ function FinalStackPage() {
     const location = useLocation();
     const state = location.state as LocationState | null;
 
+    console.log("FinalPage, draftLink:", state?.draftLink);
     if (!state) {
         return (
-            <div style={{ maxWidth: 800, margin: "2rem auto", fontFamily: "sans-serif" }}>
-                <h1>Final Stack</h1>
-                <p>No stack data available. Please fill out the questionnaire again.</p>
-                <button onClick={() => navigate("/")}>Back to questionnaire</button>
-            </div>
+            <Stack spacing={2}>
+                <Typography variant="h5" sx={{ fontWeight: 900 }}>
+                    Final stack
+                </Typography>
+                <Alert severity="warning">
+                    No stack data available. Please fill out the questionnaire again.
+                </Alert>
+                <Button variant="contained" onClick={() => navigate("/")}>
+                    Back to questionnaire
+                </Button>
+            </Stack>
         );
     }
 
     const { result, personalStack } = state;
 
-    const renderItem = (
-        label: string,
-        rec: Recommendation | null,
-        architectureScope: string,
-        visibleForScopes: string[]
-    ) => {
-        if (!visibleForScopes.includes(architectureScope)) {
-            return null;
-        }
-
-        return (
-            <li>
-                <strong>{label}:</strong>{" "}
-                {rec ? rec.technology.name : "Not selected"}
-            </li>
-        );
-    };
+    const scopeLabel = useMemo(() => {
+        if (result.architectureScope === "BACKEND_ONLY") return "Backend only";
+        if (result.architectureScope === "FULL_STACK") return "Full stack";
+        if (result.architectureScope === "MOBILE") return "Mobile";
+        return result.architectureScope;
+    }, [result.architectureScope]);
 
     const [pdfError, setPdfError] = useState<string | null>(null);
     const [pdfLoading, setPdfLoading] = useState(false);
@@ -144,139 +160,170 @@ function FinalStackPage() {
         }
     };
 
+    const renderRow = (
+        label: string,
+        rec: Recommendation | null,
+        visibleForScopes: Array<QuestionnaireResponse["architectureScope"]>
+    ) => {
+        if (!visibleForScopes.includes(result.architectureScope)) return null;
+
+        const name = rec?.technology.name;
+        return (
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Typography variant="body2" color="text.secondary">
+                    {label}
+                </Typography>
+                {name ? (
+                    <Chip label={name} color="primary" variant="outlined" sx={{ fontWeight: 800 }} />
+                ) : (
+                    <Chip label="Not selected" variant="outlined" />
+                )}
+            </Stack>
+        );
+    };
+
+
     return (
-        <div style={{ maxWidth: 800, margin: "2rem auto", fontFamily: "sans-serif" }}>
-            <h1>Your final stack</h1>
-            <p>
-                <strong>Scope:</strong> {result.architectureScope}
-            </p>
+        <Stack spacing={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                <Typography variant="h5" sx={{ fontWeight: 900, flexGrow: 1 }}>
+                    Your final stack
+                </Typography>
+                <Chip label={scopeLabel} color="primary" variant="outlined" sx={{ fontWeight: 800 }} />
+            </Stack>
 
-            <ul>
-                {renderItem("Backend", personalStack.backend, result.architectureScope, [
-                    "BACKEND_ONLY",
-                    "FULL_STACK",
-                ])}
+            <Paper variant="outlined" sx={{ p: 2.5 }}>
+                <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
+                    Selected technologies
+                </Typography>
 
-                {renderItem("Frontend", personalStack.frontend, result.architectureScope, [
-                    "FULL_STACK",
-                ])}
+                <Stack spacing={1.25}>
+                    {renderRow("Backend", personalStack.backend, ["BACKEND_ONLY", "FULL_STACK"])}
+                    {renderRow("Frontend", personalStack.frontend, ["FULL_STACK"])}
+                    {renderRow("Database", personalStack.database, ["FULL_STACK"])}
+                    {renderRow("Mobile", personalStack.mobile, ["MOBILE"])}
+                </Stack>
 
-                {renderItem("Database", personalStack.database, result.architectureScope, [
-                    "FULL_STACK",
-                ])}
+                <Divider sx={{ my: 2 }} />
 
-                {renderItem("Mobile", personalStack.mobile, result.architectureScope, [
-                    "MOBILE",
-                ])}
-            </ul>
+                <Stack spacing={1}>
+                    <Typography variant="body2" color="text.secondary">
+                        Export a PDF containing your selected stack and relevant metadata (name, organization,
+                        notes).
+                    </Typography>
 
-            <button onClick={onClickDownload} disabled={pdfLoading}>
-                {pdfLoading ? "Generating PDF..." : "Download PDF"}
-            </button>
+                    {state.draftLink && (
+                        <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all" }}>
+                            Draft link included in PDF:{" "}
+                            <Link href={state.draftLink} target="_blank" rel="noopener noreferrer">
+                                {state.draftLink}
+                            </Link>
+                        </Typography>
+                    )}
+                </Stack>
+            </Paper>
 
-            {pdfError && <p style={{ color: "red" }}>{pdfError}</p>}
+            {pdfError && <Alert severity="error">{pdfError}</Alert>}
 
-            <button style={{ marginTop: "2rem" }} onClick={() => navigate("/")}>
-                Start over
-            </button>
-
-            {/* -------- Modal dialog -------- */}
-            {isDialogOpen && (
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    style={{
-                        position: "fixed",
-                        inset: 0,
-                        background: "rgba(0,0,0,0.4)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "1rem",
-                    }}
-                    onClick={() => {
-                        if (!pdfLoading) setIsDialogOpen(false);
-                    }}
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<DownloadIcon />}
+                    onClick={onClickDownload}
+                    disabled={pdfLoading}
+                    sx={{ flex: 1 }}
                 >
-                    <div
-                        style={{
-                            background: "white",
-                            width: "min(520px, 100%)",
-                            borderRadius: 10,
-                            padding: "1rem",
-                            boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h2 style={{ marginTop: 0 }}>Export PDF</h2>
+                    Download PDF
+                </Button>
 
-                        <div style={{ marginBottom: "0.75rem" }}>
-                            <label style={{ display: "block", fontWeight: 600 }}>
-                                Your name (required)
-                            </label>
-                            <input
-                                type="text"
-                                value={exportData.authorName}
-                                onChange={(e) =>
-                                    setExportData((p) => ({ ...p, authorName: e.target.value }))
-                                }
-                                style={{ width: "100%" }}
-                            />
-                        </div>
+                <Button
+                    variant="outlined"
+                    size="large"
+                    startIcon={<ArrowBackIcon />}
+                    onClick={() => navigate(-1)}
+                    disabled={pdfLoading}
+                >
+                    Back
+                </Button>
 
-                        <div style={{ marginBottom: "0.75rem" }}>
-                            <label style={{ display: "block", fontWeight: 600 }}>
-                                Organization (optional)
-                            </label>
-                            <input
-                                type="text"
-                                value={exportData.organization}
-                                onChange={(e) =>
-                                    setExportData((p) => ({ ...p, organization: e.target.value }))
-                                }
-                                style={{ width: "100%" }}
-                            />
-                        </div>
+                <Button
+                    variant="outlined"
+                    size="large"
+                    startIcon={<RestartAltIcon />}
+                    onClick={() => navigate("/")}
+                    disabled={pdfLoading}
+                >
+                    Start over
+                </Button>
+            </Stack>
 
-                        <div style={{ marginBottom: "0.75rem" }}>
-                            <label style={{ display: "block", fontWeight: 600 }}>
-                                Notes (optional)
-                            </label>
-                            <textarea
-                                value={exportData.notes}
-                                onChange={(e) =>
-                                    setExportData((p) => ({ ...p, notes: e.target.value }))
-                                }
-                                rows={4}
-                                style={{ width: "100%" }}
-                            />
-                        </div>
+            {/* MUI Dialog */}
+            <Dialog
+                open={isDialogOpen}
+                onClose={() => {
+                    if (!pdfLoading) setIsDialogOpen(false);
+                }}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle sx={{ fontWeight: 900 }}>Export PDF</DialogTitle>
+
+                <DialogContent dividers>
+                    <Stack spacing={2}>
+                        <TextField
+                            label="Your name (required)"
+                            value={exportData.authorName}
+                            onChange={(e) => setExportData((p) => ({ ...p, authorName: e.target.value }))}
+                            fullWidth
+                            autoFocus
+                        />
+
+                        <TextField
+                            label="Organization (optional)"
+                            value={exportData.organization}
+                            onChange={(e) => setExportData((p) => ({ ...p, organization: e.target.value }))}
+                            fullWidth
+                        />
+
+                        <TextField
+                            label="Notes (optional)"
+                            value={exportData.notes}
+                            onChange={(e) => setExportData((p) => ({ ...p, notes: e.target.value }))}
+                            fullWidth
+                            multiline
+                            minRows={4}
+                        />
 
                         {state.draftLink && (
-                            <div style={{ fontSize: "0.9rem", marginBottom: "0.75rem" }}>
-                                Draft link that will be included in the PDF:{" "}
-                                <a href={state.draftLink}>{state.draftLink}</a>
-                            </div>
+                            <Alert severity="info">
+                                The PDF will include the draft link:{" "}
+                                <Link href={state.draftLink} target="_blank" rel="noopener noreferrer">
+                                    {state.draftLink}
+                                </Link>
+                            </Alert>
                         )}
 
-                        {dialogError && <p style={{ color: "red" }}>{dialogError}</p>}
+                        {dialogError && <Alert severity="error">{dialogError}</Alert>}
+                    </Stack>
+                </DialogContent>
 
-                        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
-                            <button
-                                type="button"
-                                onClick={() => setIsDialogOpen(false)}
-                                disabled={pdfLoading}
-                            >
-                                Cancel
-                            </button>
-                            <button type="button" onClick={onConfirmExport} disabled={pdfLoading}>
-                                {pdfLoading ? "Generating..." : "Generate PDF"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={() => setIsDialogOpen(false)} disabled={pdfLoading}>
+                        Cancel
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        onClick={onConfirmExport}
+                        disabled={pdfLoading}
+                        startIcon={pdfLoading ? <CircularProgress size={18} /> : <DownloadIcon />}
+                    >
+                        {pdfLoading ? "Generating..." : "Generate PDF"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Stack>
     );
 }
 
