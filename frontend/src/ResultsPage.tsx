@@ -160,7 +160,7 @@ function ResultsPage() {
                         ) : (
                           <Chip
                             icon={<AddCircleOutlineIcon />}
-                            label="Option"
+                            label="Not selected"
                             variant="outlined"
                             sx={{ fontWeight: 800 }}
                           />
