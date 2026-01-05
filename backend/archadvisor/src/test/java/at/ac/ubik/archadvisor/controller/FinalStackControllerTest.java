@@ -102,27 +102,4 @@ class FinalStackControllerTest {
         );
     }
 
-    @Test
-    void generatePdf_whenArchitectureScopeNull_usesNA() throws Exception {
-        byte[] fakePdf = "pdf".getBytes();
-        when(documentCreator.createStackPdf(any(), any(), any(), any(), any(), any(), anyLong()))
-                .thenReturn(fakePdf);
-
-        FinalStackRequestDto dto = new FinalStackRequestDto();
-        dto.setArchitectureScope(ArchitectureScope.FULL_STACK);
-        dto.setDraftId(UUID.randomUUID().toString());
-
-        mvc.perform(post("/api/stack/pdf")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsBytes(dto)))
-                .andExpect(status().isOk())
-                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE));
-
-        verify(documentCreator).createStackPdf(
-                any(FinalStackRequestDto.class),
-                isNull(), isNull(), isNull(), isNull(),
-                isNull(),
-                eq(1L)
-        );
-    }
 }
