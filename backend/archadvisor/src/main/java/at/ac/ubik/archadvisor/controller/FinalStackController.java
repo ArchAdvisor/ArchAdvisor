@@ -2,7 +2,6 @@ package at.ac.ubik.archadvisor.controller;
 
 import at.ac.ubik.archadvisor.DTO.FinalStackRequestDto;
 import at.ac.ubik.archadvisor.DTO.QuestionnaireRequestDto;
-import at.ac.ubik.archadvisor.domain.enums.ArchitectureScope;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.QuestionnaireDraftEntity;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.TechnologyEntity;
 import at.ac.ubik.archadvisor.infrastructure.persistence.repository.QuestionnaireDraftRepository;
@@ -12,7 +11,10 @@ import at.ac.ubik.archadvisor.service.documentcreator.DocumentCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
@@ -60,6 +62,7 @@ public class FinalStackController {
 
         if (questionnaireRequestDto == null) {
             log.error("Questionnaire Request is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         byte[] pdf = documentCreator.createStackPdf(
                 dto,
@@ -87,48 +90,5 @@ public class FinalStackController {
         return technologyRepository.findById(id).map(TechnologyEntity::getName).orElse("Unknown (id=" + id + ")");
     }
 
-    //DEBUG only!
-    @GetMapping(value = "/pdf/preview", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<byte[]> previewPdf(
-            @RequestParam(required = false) Long backendId,
-            @RequestParam(required = false) Long frontendId,
-            @RequestParam(required = false) Long databaseId,
-            @RequestParam(required = false) Long mobileId,
-            @RequestParam(defaultValue = "FULL_STACK") ArchitectureScope architectureScope
-    ) throws Exception {
-
-        FinalStackRequestDto dto = new FinalStackRequestDto();
-        dto.setArchitectureScope(architectureScope);
-        dto.setBackendId(backendId);
-        dto.setFrontendId(frontendId);
-        dto.setDatabaseId(databaseId);
-        dto.setMobileId(mobileId);
-        dto.setDraftLink("http://localhost:3000/");
-        dto.setDraftId("AIIA-34");
-        dto.setAuthorName("Emil");
-        dto.setOrganization("Translogica");
-        dto.setNotes("bla bla bla bla");
-
-        String backendName = resolveName(dto.getBackendId());
-        String frontendName = resolveName(dto.getFrontendId());
-        String databaseName = resolveName(dto.getDatabaseId());
-        String mobileName = resolveName(dto.getMobileId());
-
-        QuestionnaireRequestDto questionnaireRequestDto = new QuestionnaireRequestDto();
-        questionnaireRequestDto.setProjectName("Half life 3");
-        byte[] pdf = documentCreator.createStackPdf(
-                dto,
-                backendName,
-                frontendName,
-                databaseName,
-                mobileName, questionnaireRequestDto, 2);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDisposition(ContentDisposition.inline().filename("preview.pdf").build());
-        headers.setCacheControl(CacheControl.noCache());
-
-        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
-    }
 }
 

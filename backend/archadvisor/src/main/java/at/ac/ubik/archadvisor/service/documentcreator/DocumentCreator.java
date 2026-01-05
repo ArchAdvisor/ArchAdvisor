@@ -34,7 +34,7 @@ public class DocumentCreator {
 
     private static final String PRODUCT_NAME = "Archadvisor";
     private static final String LOGO_RESOURCE = "/favicon-32x32.png";
-
+    private static final String NOT_SPECIFIED = "Not specified";
     private static String normalizeUrl(String url) {
         if (url == null) return null;
         String cleaned = url.trim().replaceAll("\\p{Cntrl}", "");
@@ -49,11 +49,11 @@ public class DocumentCreator {
     }
 
     private static String safe(String s) {
-        return notBlank(s) ? s : "N/A";
+        return notBlank(s) ? s : NOT_SPECIFIED;
     }
 
     private static String humanizeEnum(String enumName) {
-        if (enumName == null || enumName.isBlank()) return "N/A";
+        if (enumName == null || enumName.isBlank()) return NOT_SPECIFIED;
         String lower = enumName.toLowerCase(Locale.ROOT).replace('_', ' ');
         return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
     }
@@ -78,7 +78,7 @@ public class DocumentCreator {
                 String generatedAt = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z"));
                 float y = drawHeader(doc, page1, cs, PRODUCT_NAME, "Generated " + generatedAt);
 
-                y = writeHeading(cs, questionnaire.getProjectName() + " – Recommended Stack" + " version " + questionnaireVersion, y);
+                y = writeHeading(cs, questionnaire.getProjectName() + " – Recommended Stack" + " (v" + questionnaireVersion + ")", y);
 
                 if (notBlank(finalStack.getAuthorName())) {
                     y = writeKeyValue(cs, page1, "Author", finalStack.getAuthorName(), y);
@@ -106,7 +106,7 @@ public class DocumentCreator {
 
                 String scope = (finalStack.getArchitectureScope() != null)
                         ? finalStack.getArchitectureScope().name()
-                        : "N/A";
+                        : NOT_SPECIFIED;
 
                 y = writeKeyValue(cs, page1, "Architecture scope", makeArchitectureScopeReadable(scope), y);
 
@@ -128,27 +128,27 @@ public class DocumentCreator {
                     y2 = writeKeyValue(cs2, page2, "Architecture scope",
                             questionnaire.getArchitectureScope() != null
                                     ? humanizeEnum(questionnaire.getArchitectureScope().name())
-                                    : "N/A",
+                                    : NOT_SPECIFIED,
                             y2);
 
-                    y2 = writeKeyValue(cs2, page2, "Open source", String.valueOf(questionnaire.isOpenSource()), y2);
+                    y2 = writeKeyValue(cs2, page2, "Use only Open source-technologies", String.valueOf(questionnaire.isOpenSource()), y2);
 
                     y2 = writeKeyValue(cs2, page2, "Deployment preference",
                             questionnaire.getDeploymentPreference() != null
                                     ? humanizeEnum(questionnaire.getDeploymentPreference().name())
-                                    : "N/A",
+                                    : NOT_SPECIFIED,
                             y2);
                     if (needsBudgetTier(questionnaire.getDeploymentPreference())) {
                         y2 = writeKeyValue(cs2, page2, "Budget tier",
                                 questionnaire.getBudgetTier() != null
                                         ? humanizeEnum(questionnaire.getBudgetTier().name())
-                                        : "N/A",
+                                        : NOT_SPECIFIED,
                                 y2);
                     }
                     y2 = writeKeyValue(cs2, page2, "Expected users",
                             questionnaire.getExpectedUsers() != null
                                     ? questionnaire.getExpectedUsers().toString()
-                                    : "N/A",
+                                    : NOT_SPECIFIED,
                             y2);
 
                     y2 = writeKeyValue(cs2, page2, "Serverless-friendly",
@@ -157,25 +157,22 @@ public class DocumentCreator {
                     y2 = writeKeyValue(cs2, page2, "Team size",
                             questionnaire.getTeamSize() != null
                                     ? questionnaire.getTeamSize().toString()
-                                    : "N/A",
+                                    : NOT_SPECIFIED,
                             y2);
 
                     y2 = writeKeyValue(cs2, page2, "Experience level",
                             safe(questionnaire.getExperienceLevel()), y2);
 
                     if (questionnaire.getProgrammingLanguages() != null && !questionnaire.getProgrammingLanguages().isEmpty()) {
-                        String langs = questionnaire.getProgrammingLanguages().stream()
+                        String languages = questionnaire.getProgrammingLanguages().stream()
                                 .map(pl -> humanizeEnum(pl.name()))
                                 .sorted()
                                 .collect(Collectors.joining(", "));
-                        y2 = writeKeyValue(cs2, page2, "Programming languages", langs, y2);
+                        y2 = writeKeyValue(cs2, page2, "Programming languages", languages, y2);
                     }
 
                     if (questionnaire.getPriorityAspects() != null && !questionnaire.getPriorityAspects().isEmpty()) {
-                        String prios = questionnaire.getPriorityAspects().stream()
-                                .map(pa -> humanizeEnum(pa.name()))
-                                .collect(Collectors.joining(", "));
-                        y2 = writeKeyValue(cs2, page2, "Priority aspects", prios, y2);
+                        y2 = writeRankedList(cs2, page2, "Priority aspects (ranked)", questionnaire.getPriorityAspects(), y2);
                     }
 
                 }
@@ -263,7 +260,7 @@ public class DocumentCreator {
     }
 
     private float writeKeyValue(PDPageContentStream cs, PDPage page, String key, String value, float y) throws Exception {
-        String line = key + ": " + (value == null ? "N/A" : value);
+        String line = key + ": " + (value == null ? NOT_SPECIFIED : value);
         return writeWrapped(cs, page, line, y);
     }
 
@@ -394,5 +391,22 @@ public class DocumentCreator {
         return dp == DeploymentPreference.PAAS
                 || dp == DeploymentPreference.CLOUD_NATIVE
                 || dp == DeploymentPreference.SERVERLESS;
+    }
+
+    private float writeRankedList(
+            PDPageContentStream cs,
+            PDPage page,
+            String title,
+            List<? extends Enum<?>> items,
+            float y
+    ) throws Exception {
+        y = writeWrapped(cs, page, title + ":", y);
+        for (int i = 0; i < items.size(); i++) {
+            String label = humanizeEnum(items.get(i).name());
+            String line = (i + 1) + ". " + label;
+            y = writeWrapped(cs, page, line, y);
+        }
+
+        return y;
     }
 }
