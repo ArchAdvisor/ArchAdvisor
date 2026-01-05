@@ -77,7 +77,3 @@ npm run dev
 
 Access it at:
 http://localhost:3000
-
-## License
-
-MIT License
