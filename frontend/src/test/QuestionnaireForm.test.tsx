@@ -5,14 +5,14 @@ import QuestionnaireForm from "../QuestionnaireForm";
 import { expect, test, vi, afterEach } from "vitest";
 
 function renderAt(path: string) {
-    return render(
-        <MemoryRouter initialEntries={[path]}>
-            <Routes>
-                <Route path="/" element={<QuestionnaireForm />} />
-                <Route path="/draft/:draftId" element={<QuestionnaireForm />} />
-            </Routes>
-        </MemoryRouter>
-    );
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route path="/" element={<QuestionnaireForm />} />
+        <Route path="/draft/:draftId" element={<QuestionnaireForm />} />
+      </Routes>
+    </MemoryRouter>
+  );
 }
 
 function ResultsStateSpy() {
@@ -153,79 +153,79 @@ test("submit sends correct payload (including renamed keys and priority order)",
 });
 
 test("shows Budget tier only for cloud-like deployment preferences", async () => {
-    renderAt("/");
+  renderAt("/");
 
-    expect(screen.queryByLabelText(/budget tier/i)).not.toBeInTheDocument();
+  expect(screen.queryByLabelText(/budget tier/i)).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByLabelText(/deployment preference/i));
-    await userEvent.click(await screen.findByRole("option", { name: /serverless/i }));
+  await userEvent.click(screen.getByLabelText(/deployment preference/i));
+  await userEvent.click(await screen.findByRole("option", { name: /serverless/i }));
 
-    expect(await screen.findByLabelText(/budget tier/i)).toBeInTheDocument();
+  expect(await screen.findByLabelText(/budget tier/i)).toBeInTheDocument();
 });
 
 test("priority ranking: move down swaps order", async () => {
-    renderAt("/");
+  renderAt("/");
 
-    expect(screen.getByText(/1\.\s*performance/i)).toBeInTheDocument();
+  expect(screen.getByText(/1\.\s*performance/i)).toBeInTheDocument();
 
-    const moveDownButtons = screen.getAllByLabelText(/move down performance/i);
-    await userEvent.click(moveDownButtons[0]);
-    await waitFor(() => {
-        expect(screen.queryByText(/1\.\s*performance/i)).not.toBeInTheDocument();
-    });
+  const moveDownButtons = screen.getAllByLabelText(/move down performance/i);
+  await userEvent.click(moveDownButtons[0]);
+  await waitFor(() => {
+    expect(screen.queryByText(/1\.\s*performance/i)).not.toBeInTheDocument();
+  });
 });
 
 test("submitting creates a draft when no draftId exists", async () => {
-    renderAt("/");
+  renderAt("/");
 
-    await userEvent.type(screen.getByLabelText(/name of the project/i), "My Project");
+  await userEvent.type(screen.getByLabelText(/name of the project/i), "My Project");
 
-    await userEvent.click(screen.getByRole("button", { name: /submit/i }));
+  await userEvent.click(screen.getByRole("button", { name: /submit/i }));
 
-    await waitFor(() => {
-        expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
-    });
+  await waitFor(() => {
+    expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
+  });
 });
 
 
 test("entering inputs updates the form values (basic mapping)", async () => {
-    const user = userEvent.setup();
+  const user = userEvent.setup();
 
-    render(
-        <MemoryRouter initialEntries={["/"]}>
-            <Routes>
-                <Route path="/" element={<QuestionnaireForm />} />
-            </Routes>
-        </MemoryRouter>
-    );
+  render(
+    <MemoryRouter initialEntries={["/"]}>
+      <Routes>
+        <Route path="/" element={<QuestionnaireForm />} />
+      </Routes>
+    </MemoryRouter>
+  );
 
-    const projectName = screen.getByLabelText(/name of the project/i);
-    await user.type(projectName, "MyApp");
-    expect(projectName).toHaveValue("MyApp");
+  const projectName = screen.getByLabelText(/name of the project/i);
+  await user.type(projectName, "MyApp");
+  expect(projectName).toHaveValue("MyApp");
 
-    const teamSize = screen.getByLabelText(/team size/i) as HTMLInputElement;
+  const teamSize = screen.getByLabelText(/team size/i) as HTMLInputElement;
 
-    await user.click(teamSize);      
-    await user.clear(teamSize);     
-    await user.type(teamSize, "3"); 
+  await user.click(teamSize);
+  await user.clear(teamSize);
+  await user.type(teamSize, "3");
 
-    expect(teamSize).toHaveValue(3);
+  expect(teamSize).toHaveValue(3);
 
-    await user.click(screen.getByRole("button", { name: /python/i }));
-    expect(screen.getByText(/selected:/i)).toHaveTextContent("Python");
+  await user.click(screen.getByRole("button", { name: /python/i }));
+  expect(screen.getByText(/selected:/i)).toHaveTextContent("Python");
 });
 
 test("number inputs reset to default values on blur if left empty or invalid", async () => {
-    const user = userEvent.setup();
-    renderAt("/");
-    const topRankInput = screen.getByLabelText(/number of recommendations/i);
+  const user = userEvent.setup();
+  renderAt("/");
+  const topRankInput = screen.getByLabelText(/number of recommendations/i);
 
-    await user.clear(topRankInput);
-    expect(topRankInput).toHaveValue(null);
-    await user.tab();
-    expect(topRankInput).toHaveValue(4);
-    const teamSizeInput = screen.getByLabelText(/team size/i);
-    await user.clear(teamSizeInput);
-    await user.tab();
-    expect(teamSizeInput).toHaveValue(1);
+  await user.clear(topRankInput);
+  expect(topRankInput).toHaveValue(null);
+  await user.tab();
+  expect(topRankInput).toHaveValue(4);
+  const teamSizeInput = screen.getByLabelText(/team size/i);
+  await user.clear(teamSizeInput);
+  await user.tab();
+  expect(teamSizeInput).toHaveValue(1);
 });
