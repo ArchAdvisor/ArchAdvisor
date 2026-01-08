@@ -210,6 +210,7 @@ function ResultsPage() {
 
                     <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
                       <Button
+                        aria-label={`select-${category}-${rec.technology.id}`}
                         type="button"
                         variant={isSelected ? "outlined" : "contained"}
                         disabled={isSelected}
@@ -258,7 +259,7 @@ function ResultsPage() {
       )}
 
       {/* Selected stack summary (sticky-like feel using Paper + spacing) */}
-      <Paper variant="outlined" sx={{ p: 2.5 }}>
+      <Paper data-testid="selected-stack-panel" variant="outlined" sx={{ p: 2.5 }}>
         <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
           Your selected stack
         </Typography>
