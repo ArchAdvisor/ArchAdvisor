@@ -508,14 +508,19 @@ function QuestionnaireForm() {
                     <TextField
                         label="Team size"
                         type="number"
-                        value={form.teamSize ?? ""}
+                        value={form.teamSize === 0 ? "" : form.teamSize}
                         inputProps={{ min: 1 }}
                         onChange={(e) =>
                             setForm({
                                 ...form,
-                                teamSize: e.target.value === "" ? 1 : Number(e.target.value),
+                                teamSize: e.target.value === "" ? 0 : Number(e.target.value),
                             })
                         }
+                        onBlur={() => {
+                            if (!form.teamSize || form.teamSize < 1) {
+                                setForm({ ...form, teamSize: 1 });
+                            }
+                        }}
                         fullWidth
                     />
 
@@ -589,6 +594,7 @@ function QuestionnaireForm() {
                                             <Tooltip title="Move up">
                                                 <span>
                                                     <IconButton
+                                                        aria-label={`Move up ${PRIORITY_ASPECT_LABELS[aspect]}`}
                                                         edge="end"
                                                         size="small"
                                                         onClick={() => moveAspect(idx, -1)}
@@ -601,6 +607,7 @@ function QuestionnaireForm() {
                                             <Tooltip title="Move down">
                                                 <span>
                                                     <IconButton
+                                                        aria-label={`Move down ${PRIORITY_ASPECT_LABELS[aspect]}`}
                                                         edge="end"
                                                         size="small"
                                                         onClick={() => moveAspect(idx, 1)}
@@ -629,15 +636,18 @@ function QuestionnaireForm() {
                     <TextField
                         label="Number of recommendations to display"
                         type="number"
-                        value={form.topRankN ?? ""}
+                        value={form.topRankN === 0 ? "" : form.topRankN}
                         inputProps={{ min: 1 }}
                         onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (val >= 1) {
-                                setForm({
-                                    ...form,
-                                    topRankN: e.target.value === "" ? 4 : Number(e.target.value),
-                                });
+                            const val = e.target.value;
+                            setForm({
+                                ...form,
+                                topRankN: val === "" ? 0 : Number(val),
+                            });
+                        }}
+                        onBlur={() => {
+                            if (!form.topRankN || form.topRankN < 1) {
+                                setForm({ ...form, topRankN: 4 });
                             }
                         }}
                         fullWidth
