@@ -1,0 +1,238 @@
+package at.ac.ubik.archadvisor.infrastructure.persistence.repository;
+
+import at.ac.ubik.archadvisor.domain.enums.*;
+import at.ac.ubik.archadvisor.infrastructure.persistence.entity.CompatibilityRuleEntity;
+import at.ac.ubik.archadvisor.infrastructure.persistence.entity.TechnologyEntity;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.time.Instant;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@SpringBootTest
+@ActiveProfiles("test")
+class CompatibilityRuleRepositoryTest {
+
+    @Autowired
+    private TechnologyRepository technologyRepository;
+
+    @Autowired
+    private CompatibilityRuleRepository compatibilityRuleRepository;
+
+    private TechnologyEntity tech1;
+    private TechnologyEntity tech2;
+
+    @BeforeEach
+    void setUpRepository() {
+        technologyRepository.deleteAll();
+        TechnologyEntity backend_one = new TechnologyEntity(
+                "Spring Boot",
+                TechnologyKind.BACKEND,
+                Instant.now(),
+                "https://spring.io/projects/spring-boot",
+                "https://github.com/spring-projects/spring-boot",
+                "java,spring,backend,microservices",
+                LicenseType.OPEN_SOURCE
+        );
+        backend_one.setLanguage(ProgrammingLanguage.JAVA);
+        backend_one.setRuntime(RuntimeType.JDK);
+        backend_one.setServerlessFriendly(false);
+        backend_one.setSupportsSSR(false);
+        backend_one.setPerformanceScore(0.85);
+        backend_one.setScalabilityScore(0.90);
+        backend_one.setMaintainabilityScore(0.95);
+        backend_one.setSecurityScore(0.90);
+        backend_one.setCostEffectivenessScore(0.80);
+        backend_one.setCommunitySupportScore(0.95);
+        backend_one.setEcosystemMaturityScore(0.98);
+        backend_one.setVendorLockinScore(0.10);
+        tech1 = technologyRepository.save(backend_one);
+
+        TechnologyEntity backend_two = new TechnologyEntity(
+                "Express.js",
+                TechnologyKind.BACKEND,
+                Instant.now(),
+                "https://expressjs.com/",
+                "https://github.com/expressjs/express",
+                "nodejs,javascript,backend,rest",
+                LicenseType.OPEN_SOURCE
+        );
+        backend_two.setLanguage(ProgrammingLanguage.JAVASCRIPT);
+        backend_two.setRuntime(RuntimeType.NODE);
+        backend_two.setServerlessFriendly(true);
+        backend_two.setSupportsSSR(false);
+        backend_two.setPerformanceScore(0.80);
+        backend_two.setScalabilityScore(0.85);
+        backend_two.setMaintainabilityScore(0.75);
+        backend_two.setSecurityScore(0.70);
+        backend_two.setCostEffectivenessScore(0.90);
+        backend_two.setCommunitySupportScore(0.88);
+        backend_two.setEcosystemMaturityScore(0.90);
+        backend_two.setVendorLockinScore(0.05);
+        tech2 = technologyRepository.save(backend_two);
+
+
+        TechnologyEntity frontend_one = new TechnologyEntity(
+                "React",
+                TechnologyKind.FRONTEND,
+                Instant.now(),
+                "https://react.dev/",
+                "https://github.com/facebook/react",
+                "frontend,react,javascript,web",
+                LicenseType.OPEN_SOURCE
+        );
+        frontend_one.setLanguage(ProgrammingLanguage.JAVASCRIPT);
+        frontend_one.setRuntime(RuntimeType.BROWSER);
+        frontend_one.setServerlessFriendly(true);
+        frontend_one.setSupportsSSR(true);
+        frontend_one.setPerformanceScore(0.80);
+        frontend_one.setScalabilityScore(0.85);
+        frontend_one.setMaintainabilityScore(0.90);
+        frontend_one.setSecurityScore(0.70);
+        frontend_one.setCostEffectivenessScore(0.95);
+        frontend_one.setCommunitySupportScore(0.98);
+        frontend_one.setEcosystemMaturityScore(0.97);
+        frontend_one.setVendorLockinScore(0.10);
+        technologyRepository.save(frontend_one);
+
+        TechnologyEntity frontend_two = new TechnologyEntity(
+                "Angular",
+                TechnologyKind.FRONTEND,
+                Instant.now(),
+                "https://angular.io/",
+                "https://github.com/angular/angular",
+                "typescript,frontend,spa,web",
+                LicenseType.OPEN_SOURCE
+        );
+        frontend_two.setLanguage(ProgrammingLanguage.TYPESCRIPT);
+        frontend_two.setRuntime(RuntimeType.BROWSER);
+        frontend_two.setServerlessFriendly(true);
+        frontend_two.setSupportsSSR(true);
+        frontend_two.setPerformanceScore(0.75);
+        frontend_two.setScalabilityScore(0.90);
+        frontend_two.setMaintainabilityScore(0.85);
+        frontend_two.setSecurityScore(0.80);
+        frontend_two.setCostEffectivenessScore(0.85);
+        frontend_two.setCommunitySupportScore(0.90);
+        frontend_two.setEcosystemMaturityScore(0.95);
+        frontend_two.setVendorLockinScore(0.20);
+        technologyRepository.save(frontend_two);
+
+
+        TechnologyEntity db_one = new TechnologyEntity(
+                "PostgreSQL",
+                TechnologyKind.DATABASE,
+                Instant.now(),
+                "https://www.postgresql.org/docs/",
+                "https://github.com/postgres/postgres",
+                "database,relational,sql,postgres",
+                LicenseType.OPEN_SOURCE
+        );
+        db_one.setDbModelType(DbModelType.RELATIONAL);
+        db_one.setRuntime(RuntimeType.NATIVE);
+        db_one.setServerlessFriendly(true);
+        db_one.setPerformanceScore(0.90);
+        db_one.setScalabilityScore(0.85);
+        db_one.setMaintainabilityScore(0.95);
+        db_one.setSecurityScore(0.95);
+        db_one.setCostEffectivenessScore(0.95);
+        db_one.setCommunitySupportScore(0.95);
+        db_one.setEcosystemMaturityScore(0.98);
+        db_one.setVendorLockinScore(0.05);
+        technologyRepository.save(db_one);
+
+        TechnologyEntity db_two = new TechnologyEntity(
+                "MongoDB",
+                TechnologyKind.DATABASE,
+                Instant.now(),
+                "https://www.mongodb.com/docs/",
+                "https://github.com/mongodb/mongo",
+                "database,nosql,mongodb,document",
+                LicenseType.OPEN_SOURCE
+        );
+        db_two.setDbModelType(DbModelType.DOCUMENT);
+        db_two.setRuntime(RuntimeType.NATIVE);
+        db_two.setServerlessFriendly(true);
+        db_two.setPerformanceScore(0.80);
+        db_two.setScalabilityScore(0.90);
+        db_two.setMaintainabilityScore(0.85);
+        db_two.setSecurityScore(0.75);
+        db_two.setCostEffectivenessScore(0.85);
+        db_two.setCommunitySupportScore(0.90);
+        db_two.setEcosystemMaturityScore(0.95);
+        db_two.setVendorLockinScore(0.10);
+        technologyRepository.save(db_two);
+
+        TechnologyEntity mobile_one = new TechnologyEntity(
+                "Flutter",
+                TechnologyKind.MOBILE,
+                Instant.now(),
+                "https://docs.flutter.dev/",
+                "https://github.com/flutter/flutter",
+                "dart,flutter,mobile,cross-platform",
+                LicenseType.OPEN_SOURCE
+        );
+        mobile_one.setLanguage(ProgrammingLanguage.DART);
+        mobile_one.setMobilePlatform(MobilePlatform.IOS_AND_ANDROID);
+        mobile_one.setRuntime(RuntimeType.NATIVE);
+        mobile_one.setServerlessFriendly(true);
+        mobile_one.setPerformanceScore(0.85);
+        mobile_one.setScalabilityScore(0.75);
+        mobile_one.setMaintainabilityScore(0.80);
+        mobile_one.setSecurityScore(0.75);
+        mobile_one.setCostEffectivenessScore(0.95);
+        mobile_one.setCommunitySupportScore(0.90);
+        mobile_one.setEcosystemMaturityScore(0.90);
+        mobile_one.setVendorLockinScore(0.20);
+        technologyRepository.save(mobile_one);
+
+        TechnologyEntity mobile_two = new TechnologyEntity(
+                "React Native",
+                TechnologyKind.MOBILE,
+                Instant.now(),
+                "https://reactnative.dev/docs",
+                "https://github.com/facebook/react-native",
+                "javascript,react-native,mobile,cross-platform",
+                LicenseType.OPEN_SOURCE
+        );
+        mobile_two.setLanguage(ProgrammingLanguage.JAVASCRIPT);
+        mobile_two.setMobilePlatform(MobilePlatform.IOS_AND_ANDROID);
+        mobile_two.setRuntime(RuntimeType.NATIVE);
+        mobile_two.setServerlessFriendly(true);
+        mobile_two.setPerformanceScore(0.80);
+        mobile_two.setScalabilityScore(0.70);
+        mobile_two.setMaintainabilityScore(0.85);
+        mobile_two.setSecurityScore(0.70);
+        mobile_two.setCostEffectivenessScore(0.95);
+        mobile_two.setCommunitySupportScore(0.90);
+        mobile_two.setEcosystemMaturityScore(0.95);
+        mobile_two.setVendorLockinScore(0.15);
+        technologyRepository.save(mobile_two);
+    }
+
+    @Test
+    void ensureCorrectOrderWhenSavingCompatibilityEntity() throws Exception {
+        Long smallerId = Math.min(tech1.getId(), tech2.getId());
+        Long higherId = Math.max(tech1.getId(), tech2.getId());
+
+        Optional<TechnologyEntity> technologyEntityWithSmallerId = technologyRepository.findById(smallerId);
+        Optional<TechnologyEntity> technologyEntityWithHigherId = technologyRepository.findById(higherId);
+        if (technologyEntityWithSmallerId.isPresent() && technologyEntityWithHigherId.isPresent()) {
+            CompatibilityRuleEntity compatibilityRuleEntity = CompatibilityRuleEntity.of(technologyEntityWithHigherId.get(), technologyEntityWithSmallerId.get(), "Not compatibile", RuleLevel.BLOCK);
+            compatibilityRuleRepository.save(compatibilityRuleEntity);
+            compatibilityRuleEntity = compatibilityRuleRepository.findAll().getFirst();
+
+            assertEquals(smallerId, compatibilityRuleEntity.getSourceTechnology().getId());
+            assertEquals(higherId, compatibilityRuleEntity.getTargetTechnology().getId());
+        } else {
+            throw new Exception("One of the technologies is not present");
+        }
+
+    }
+
+}
