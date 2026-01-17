@@ -15,5 +15,15 @@
 ## Figma File
 [Figma](https://www.figma.com/design/huhnZEcTGHuuRMpuvUqFGa/ArchAdvisor?node-id=16-2&t=Lx06cDFAWtswat7D-1)
 
+## Sources for metrics
 
+[Metric source document](https://docs.google.com/document/d/1SOwoNVjgwmHI87lQPCwIxd7xs3imgc-kVOWWYp2E1gs/edit?tab=t.0)
+
+## Progress report written
+
+[Written progress report](https://docs.google.com/document/d/1XLgL3F-LJ6kI9NVgp_K61ltXYB6TN794dcm6OM6kBjc/edit?usp=sharing)
+
+## Progress report presentation
+
+[Progress report presentation](https://docs.google.com/presentation/d/1mZDejC2Ev1GwR6_AZ4ckKLJgZ_TP6ia5HazNhhY6JxE/edit?usp=sharing)
 
