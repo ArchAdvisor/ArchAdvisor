@@ -27,10 +27,10 @@
 
 [Progress report presentation](https://docs.google.com/presentation/d/1mZDejC2Ev1GwR6_AZ4ckKLJgZ_TP6ia5HazNhhY6JxE/edit?usp=sharing)
 
-## Final pitch
-
-[Final pitch](https://docs.google.com/document/d/10l98YPGkApRsFtbxLl6KFlmUbtl_8vhDXL_wIjsyQ5Y/edit?usp=sharing)
-
 ## Final report
 
-[Final report](https://docs.google.com/presentation/d/1rl6-jaw3i3vHHpkfDuRV6i7ao3yfvEFHCDJgRAQbUq0/edit?usp=sharing)
+[Final report](https://docs.google.com/document/d/10l98YPGkApRsFtbxLl6KFlmUbtl_8vhDXL_wIjsyQ5Y/edit?usp=sharing)
+
+## Final pitch
+
+[Final pitch](https://docs.google.com/presentation/d/1rl6-jaw3i3vHHpkfDuRV6i7ao3yfvEFHCDJgRAQbUq0/edit?usp=sharing)
