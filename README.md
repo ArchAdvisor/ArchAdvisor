@@ -1,3 +1,12 @@
+![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+
+![Project Status](https://img.shields.io/badge/Status-Prototype-yellow?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 # ArchAdvisor
 
 Project for university master course Software Design
@@ -7,8 +16,17 @@ Project for university master course Software Design
 ArchAdvisor is a decision-support system that helps software engineers, students, and teams evaluate and compare
 technology stacks based on project requirements, team capabilities, and weighted priority criteria.
 
-The backend is implemented in Java + Spring Boot, and PostgreSQL is managed using Docker Compose.
-The frontend is implemented in React and TypeScript (Vite)
+## Features (MVP)
+- Questionnaire-based project profiling
+- Rule- and metric-based technology recommendations
+- Support for backend-only, full-stack, and mobile scopes
+- PostgreSQL-backed technology catalog
+
+## Architecture
+- Spring Boot (Java)
+- Layered architecture (API, service, persistence)
+- PostgreSQL (via Docker Compose)
+- Frontend (React +Vite)
 
 ## Prerequisites
 
@@ -74,6 +92,8 @@ Start the frontend
 ````bash
 npm run dev
 ````
-
 Access it at:
 http://localhost:3000
+
+### Project status
+This is an academic prototype. The recommendation logic and metrics are intentionally simplified.
