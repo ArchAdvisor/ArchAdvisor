@@ -6,16 +6,13 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Table(name = "questionnaire_drafts")
 public class QuestionnaireDraftEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
-    private UUID id;
+    @EmbeddedId
+    private QuestionnaireDraftKey key;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payload", nullable = false, columnDefinition = "jsonb")
@@ -26,9 +23,6 @@ public class QuestionnaireDraftEntity {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-
-    @Column(name = "version", nullable = false)
-    private long version = 1;
 
 
     public QuestionnaireDraftEntity() {
@@ -47,20 +41,12 @@ public class QuestionnaireDraftEntity {
         updatedAt = Instant.now();
     }
 
-    public UUID getId() {
-        return id;
+    public QuestionnaireDraftKey getKey() {
+        return key;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public long getVersion() {
-        return version;
-    }
-
-    public void setVersion(long version) {
-        this.version = version;
+    public void setKey(QuestionnaireDraftKey key) {
+        this.key = key;
     }
 
     public Instant getUpdatedAt() {
