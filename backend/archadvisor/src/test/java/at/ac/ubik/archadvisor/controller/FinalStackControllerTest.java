@@ -4,6 +4,7 @@ import at.ac.ubik.archadvisor.DTO.FinalStackRequestDto;
 import at.ac.ubik.archadvisor.DTO.QuestionnaireRequestDto;
 import at.ac.ubik.archadvisor.domain.enums.ArchitectureScope;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.QuestionnaireDraftEntity;
+import at.ac.ubik.archadvisor.infrastructure.persistence.entity.QuestionnaireDraftKey;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.TechnologyEntity;
 import at.ac.ubik.archadvisor.infrastructure.persistence.repository.QuestionnaireDraftRepository;
 import at.ac.ubik.archadvisor.infrastructure.persistence.repository.TechnologyRepository;
@@ -62,8 +63,7 @@ class FinalStackControllerTest {
 
         UUID draftUuid = UUID.randomUUID();
         QuestionnaireDraftEntity draftEntity = new QuestionnaireDraftEntity();
-        draftEntity.setId(draftUuid);
-        draftEntity.setVersion(7L);
+        draftEntity.setKey(new QuestionnaireDraftKey(draftUuid, 7));
 
         when(questionnaireDraftRepository.findById(draftUuid)).thenReturn(Optional.of(draftEntity));
 

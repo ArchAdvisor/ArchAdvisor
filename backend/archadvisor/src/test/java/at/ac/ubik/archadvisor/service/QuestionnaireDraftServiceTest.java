@@ -2,11 +2,14 @@ package at.ac.ubik.archadvisor.service;
 
 import at.ac.ubik.archadvisor.DTO.QuestionnaireRequestDto;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.QuestionnaireDraftEntity;
+import at.ac.ubik.archadvisor.infrastructure.persistence.entity.QuestionnaireDraftKey;
+import at.ac.ubik.archadvisor.infrastructure.persistence.repository.QuestionnaireDraftHeadRepository;
 import at.ac.ubik.archadvisor.infrastructure.persistence.repository.QuestionnaireDraftRepository;
 import at.ac.ubik.archadvisor.mapper.QuestionnaireDraftMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,26 +30,38 @@ class QuestionnaireDraftServiceTest {
     @Mock
     QuestionnaireDraftRepository repository;
 
+    @Mock
+    QuestionnaireDraftHeadRepository repositoryHead;
+
     @InjectMocks
     QuestionnaireDraftService service;
 
     @Test
     void createDraft_savesEntity_andReturnsId() {
         QuestionnaireRequestDto dto = new QuestionnaireRequestDto();
-
-        UUID id = UUID.randomUUID();
         QuestionnaireDraftEntity entity = new QuestionnaireDraftEntity();
-        entity.setId(id);
+        entity.setKey(new QuestionnaireDraftKey());
 
-        when(mapper.toEntity(dto)).thenReturn(entity);
+        when(repositoryHead.allocateNextVersion(any(UUID.class))).thenReturn(1L);
+        when(mapper.toEntity(eq(dto), any(UUID.class), eq(1L))).thenReturn(entity);
         when(repository.save(entity)).thenReturn(entity);
 
         UUID result = service.createDraft(dto);
 
-        assertThat(result).isEqualTo(id);
-        verify(mapper).toEntity(dto);
+        assertThat(result).isNotNull();
+
+        ArgumentCaptor<UUID> draftIdCaptor = ArgumentCaptor.forClass(UUID.class);
+
+        verify(repositoryHead).allocateNextVersion(draftIdCaptor.capture());
+        verify(repositoryHead).ensureHeadExists(draftIdCaptor.capture());
+        UUID usedDraftId = draftIdCaptor.getValue();
+
+        verify(mapper).toEntity(dto, usedDraftId, 1L);
         verify(repository).save(entity);
-        verifyNoMoreInteractions(mapper, repository);
+
+        assertThat(result).isEqualTo(usedDraftId);
+
+        verifyNoMoreInteractions(mapper, repository, repositoryHead);
     }
 
     @Test
@@ -55,13 +70,13 @@ class QuestionnaireDraftServiceTest {
         QuestionnaireDraftEntity entity = new QuestionnaireDraftEntity();
         QuestionnaireRequestDto dto = new QuestionnaireRequestDto();
 
-        when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(repository.findFirstByKeyDraftIdOrderByKeyVersionDesc(id)).thenReturn(Optional.of(entity));
         when(mapper.toDto(entity)).thenReturn(dto);
 
-        QuestionnaireRequestDto result = service.getDraft(id);
+        QuestionnaireRequestDto result = service.getLatestDraft(id);
 
         assertThat(result).isSameAs(dto);
-        verify(repository).findById(id);
+        verify(repository).findFirstByKeyDraftIdOrderByKeyVersionDesc(id);
         verify(mapper).toDto(entity);
         verifyNoMoreInteractions(mapper, repository);
     }
@@ -69,47 +84,72 @@ class QuestionnaireDraftServiceTest {
     @Test
     void getDraft_whenNotFound_throwsEntityNotFound() {
         UUID id = UUID.randomUUID();
-        when(repository.findById(id)).thenReturn(Optional.empty());
+        when(repository.findFirstByKeyDraftIdOrderByKeyVersionDesc(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.getDraft(id))
+        assertThatThrownBy(() -> service.getLatestDraft(id))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Questionnaire draft not found");
 
-        verify(repository).findById(id);
+        verify(repository).findFirstByKeyDraftIdOrderByKeyVersionDesc(id);
         verifyNoMoreInteractions(mapper, repository);
     }
 
     @Test
-    void updateDraft_whenFound_updatesEntity_saves_andReturnsSameId() throws Exception {
-        UUID id = UUID.randomUUID();
-        QuestionnaireDraftEntity existing = new QuestionnaireDraftEntity();
-        existing.setId(id);
-
+    void addDraftVersion_whenFound_allocatesNextVersion_saves_andReturnsNewVersion() {
+        UUID draftId = UUID.randomUUID();
         QuestionnaireRequestDto dto = new QuestionnaireRequestDto();
 
-        when(repository.findById(id)).thenReturn(Optional.of(existing));
-        when(repository.save(existing)).thenReturn(existing);
+        long newVersion = 2L;
 
-        UUID result = service.updateDraft(id, dto);
+        QuestionnaireDraftEntity toSave = new QuestionnaireDraftEntity();
+        toSave.setKey(new QuestionnaireDraftKey(draftId, newVersion));
 
-        assertThat(result).isEqualTo(id);
-        verify(repository).findById(id);
-        verify(mapper).updateEntity(existing, dto);
-        verify(repository).save(existing);
-        verifyNoMoreInteractions(mapper, repository);
+        //when(repositoryHead.existsById(draftId)).thenReturn(true);
+        when(repositoryHead.allocateNextVersion(draftId)).thenReturn(newVersion);
+        when(mapper.toEntity(dto, draftId, newVersion)).thenReturn(toSave);
+        when(repository.save(toSave)).thenReturn(toSave);
+        when(repository.findById(draftId)).thenReturn(Optional.of(toSave));
+
+        long result = service.addDraftVersion(draftId, dto);
+
+        assertThat(result).isEqualTo(newVersion);
+
+        verify(repositoryHead).allocateNextVersion(draftId);
+        verify(repositoryHead).ensureHeadExists(draftId);
+        verify(mapper).toEntity(dto, draftId, newVersion);
+        verify(repository).save(toSave);
+        verifyNoMoreInteractions(repositoryHead, repository, mapper);
     }
 
     @Test
-    void updateDraft_whenNotFound_throwsEntityNotFound() {
-        UUID id = UUID.randomUUID();
+    void addDraftVersion_whenNotFound_throwsEntityNotFound() {
+        UUID draftId = UUID.randomUUID();
         QuestionnaireRequestDto dto = new QuestionnaireRequestDto();
 
-        when(repository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.updateDraft(id, dto))
+        assertThatThrownBy(() -> service.addDraftVersion(draftId, dto))
                 .isInstanceOf(EntityNotFoundException.class);
 
-        verify(repository).findById(id);
-        verifyNoMoreInteractions(mapper, repository);
+        verify(repository).findById(draftId);
+        verifyNoMoreInteractions(repositoryHead, repository, mapper);
     }
+
+    @Test
+    void getDraft_whenFound_returnDto() {
+        UUID id = UUID.randomUUID();
+        QuestionnaireDraftEntity entity = new QuestionnaireDraftEntity();
+        QuestionnaireRequestDto dto = new QuestionnaireRequestDto();
+
+        when(repository.findByKeyDraftIdAndKeyVersion(id, 2L)).thenReturn(Optional.of(entity));
+        when(mapper.toDto(entity)).thenReturn(dto);
+
+        QuestionnaireRequestDto result = service.getDraft(id, 2L);
+
+        assertThat(result).isSameAs(dto);
+        verify(repository).findByKeyDraftIdAndKeyVersion(id, 2L);
+        verify(mapper).toDto(entity);
+        verifyNoMoreInteractions(mapper, repository);
+
+    }
+
 }

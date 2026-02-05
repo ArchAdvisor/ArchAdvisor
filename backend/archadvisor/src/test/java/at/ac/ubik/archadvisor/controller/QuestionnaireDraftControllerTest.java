@@ -74,7 +74,7 @@ class QuestionnaireDraftControllerTest {
         dto.setPriorityAspects(List.of(PriorityAspect.SECURITY, PriorityAspect.MAINTAINABILITY));
         dto.setTopRankN(5);
 
-        when(draftService.getDraft(id)).thenReturn(dto);
+        when(draftService.getLatestDraft(id)).thenReturn(dto);
 
         mvc.perform(get("/api/questionnaire-drafts/{id}", id))
                 .andExpect(status().isOk())
@@ -89,12 +89,12 @@ class QuestionnaireDraftControllerTest {
                 .andExpect(jsonPath("$.experienceLevel").value("Beginner"))
                 .andExpect(jsonPath("$.topRankN").value(5));
 
-        verify(draftService).getDraft(id);
+        verify(draftService).getLatestDraft(id);
         verifyNoMoreInteractions(draftService);
     }
 
     @Test
-    void updateDraft_returns204_andCallsService() throws Exception {
+    void updateDraft_returns200_andCallsService() throws Exception {
         UUID id = UUID.randomUUID();
 
         QuestionnaireRequestDto dto = new QuestionnaireRequestDto();
@@ -103,29 +103,64 @@ class QuestionnaireDraftControllerTest {
         dto.setServerlessFriendly(true);
         dto.setTopRankN(2);
 
-        // service returns UUID or void; we only care it doesn't throw
-        when(draftService.updateDraft(eq(id), any(QuestionnaireRequestDto.class))).thenReturn(id);
+        when(draftService.addDraftVersion(eq(id), any(QuestionnaireRequestDto.class))).thenReturn(2L);
 
         mvc.perform(put("/api/questionnaire-drafts/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(dto)))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
 
-        verify(draftService).updateDraft(eq(id), any(QuestionnaireRequestDto.class));
+        verify(draftService).addDraftVersion(eq(id), any(QuestionnaireRequestDto.class));
         verifyNoMoreInteractions(draftService);
     }
 
     @Test
     void getDraft_whenNotFound_returns404_viaAdvice() throws Exception {
         UUID id = UUID.randomUUID();
-        when(draftService.getDraft(id))
+        when(draftService.getLatestDraft(id))
                 .thenThrow(new EntityNotFoundException("Questionnaire draft not found: " + id));
 
         mvc.perform(get("/api/questionnaire-drafts/{id}", id))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("not found")));
 
-        verify(draftService).getDraft(id);
+        verify(draftService).getLatestDraft(id);
+        verifyNoMoreInteractions(draftService);
+    }
+
+    @Test
+    void test_getQuestionnaireDraft() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        QuestionnaireRequestDto dto = new QuestionnaireRequestDto();
+        dto.setArchitectureScope(ArchitectureScope.FULL_STACK);
+        dto.setOpenSource(true);
+        dto.setDeploymentPreference(DeploymentPreference.KUBERNETES);
+        dto.setBudgetTier(BudgetTier.MEDIUM);
+        dto.setExpectedUsers(100L);
+        dto.setServerlessFriendly(false);
+        dto.setTeamSize(3);
+        dto.setExperienceLevel("Beginner");
+        dto.setProgrammingLanguages(Set.of(ProgrammingLanguage.JAVA, ProgrammingLanguage.JAVASCRIPT));
+        dto.setPriorityAspects(List.of(PriorityAspect.SECURITY, PriorityAspect.MAINTAINABILITY));
+        dto.setTopRankN(5);
+
+        when(draftService.getDraft(id, 1L)).thenReturn(dto);
+
+        mvc.perform(get("/api/questionnaire-drafts/{id}/{versionNumber}", id, 1))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.architectureScope").value("FULL_STACK"))
+                .andExpect(jsonPath("$.openSource").value(true))
+                .andExpect(jsonPath("$.deploymentPreference").value("KUBERNETES"))
+                .andExpect(jsonPath("$.budgetTier").value("MEDIUM"))
+                .andExpect(jsonPath("$.expectedUsers").value(100))
+                .andExpect(jsonPath("$.serverlessFriendly").value(false))
+                .andExpect(jsonPath("$.teamSize").value(3))
+                .andExpect(jsonPath("$.experienceLevel").value("Beginner"))
+                .andExpect(jsonPath("$.topRankN").value(5));
+
+        verify(draftService).getDraft(id, 1L);
         verifyNoMoreInteractions(draftService);
     }
 }
