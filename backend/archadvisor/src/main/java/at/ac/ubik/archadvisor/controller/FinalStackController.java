@@ -46,10 +46,10 @@ public class FinalStackController {
         String draftId = dto.getDraftId();
         long draftVersion;
         QuestionnaireRequestDto questionnaireRequestDto = null;
-        if (questionnaireDraftRepository.findById(UUID.fromString(draftId)).isPresent()) {
-            QuestionnaireDraftEntity questionnaireDraftEntity = questionnaireDraftRepository.findById(UUID.fromString(draftId)).get();
+        if (questionnaireDraftRepository.findFirstByKeyDraftIdOrderByKeyVersionDesc(UUID.fromString(draftId)).isPresent()) {
+            QuestionnaireDraftEntity questionnaireDraftEntity = questionnaireDraftRepository.findFirstByKeyDraftIdOrderByKeyVersionDesc(UUID.fromString(draftId)).get();
             questionnaireRequestDto = questionnaireDraftMapper.payloadToDto(questionnaireDraftEntity);
-            draftVersion = questionnaireDraftRepository.findById(UUID.fromString(draftId)).get().getKey().getVersion();
+            draftVersion = questionnaireDraftRepository.findFirstByKeyDraftIdOrderByKeyVersionDesc(UUID.fromString(draftId)).get().getKey().getVersion();
         } else {
             log.error("Could not find questionnaire draft id {}", draftId);
             draftVersion = 1L;
