@@ -65,7 +65,7 @@ class FinalStackControllerTest {
         QuestionnaireDraftEntity draftEntity = new QuestionnaireDraftEntity();
         draftEntity.setKey(new QuestionnaireDraftKey(draftUuid, 7));
 
-        when(questionnaireDraftRepository.findById(draftUuid)).thenReturn(Optional.of(draftEntity));
+        when(questionnaireDraftRepository.findFirstByKeyDraftIdOrderByKeyVersionDesc(draftUuid)).thenReturn(Optional.of(draftEntity));
 
         QuestionnaireRequestDto questionnaireDto = new QuestionnaireRequestDto();
         questionnaireDto.setProjectName("Demo Project");

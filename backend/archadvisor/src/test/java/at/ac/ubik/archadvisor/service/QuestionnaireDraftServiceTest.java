@@ -1,5 +1,7 @@
 package at.ac.ubik.archadvisor.service;
 
+import at.ac.ubik.archadvisor.DTO.QuestionnaireDraftDto;
+import at.ac.ubik.archadvisor.DTO.QuestionnaireDraftKeyDto;
 import at.ac.ubik.archadvisor.DTO.QuestionnaireRequestDto;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.QuestionnaireDraftEntity;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.QuestionnaireDraftKey;
@@ -46,7 +48,7 @@ class QuestionnaireDraftServiceTest {
         when(mapper.toEntity(eq(dto), any(UUID.class), eq(1L))).thenReturn(entity);
         when(repository.save(entity)).thenReturn(entity);
 
-        UUID result = service.createDraft(dto);
+        QuestionnaireDraftKeyDto result = service.createDraft(dto);
 
         assertThat(result).isNotNull();
 
@@ -59,7 +61,7 @@ class QuestionnaireDraftServiceTest {
         verify(mapper).toEntity(dto, usedDraftId, 1L);
         verify(repository).save(entity);
 
-        assertThat(result).isEqualTo(usedDraftId);
+        assertThat(result.draftId()).isEqualTo(usedDraftId);
 
         verifyNoMoreInteractions(mapper, repository, repositoryHead);
     }
@@ -68,14 +70,15 @@ class QuestionnaireDraftServiceTest {
     void getDraft_whenFound_returnsDto() throws Exception {
         UUID id = UUID.randomUUID();
         QuestionnaireDraftEntity entity = new QuestionnaireDraftEntity();
+        entity.setKey(new QuestionnaireDraftKey(id, 1L));
         QuestionnaireRequestDto dto = new QuestionnaireRequestDto();
 
         when(repository.findFirstByKeyDraftIdOrderByKeyVersionDesc(id)).thenReturn(Optional.of(entity));
         when(mapper.toDto(entity)).thenReturn(dto);
 
-        QuestionnaireRequestDto result = service.getLatestDraft(id);
+        QuestionnaireDraftDto result = service.getLatestDraft(id);
 
-        assertThat(result).isSameAs(dto);
+        assertThat(result.payload().getTeamSize()).isSameAs(dto.getTeamSize());
         verify(repository).findFirstByKeyDraftIdOrderByKeyVersionDesc(id);
         verify(mapper).toDto(entity);
         verifyNoMoreInteractions(mapper, repository);
@@ -108,12 +111,12 @@ class QuestionnaireDraftServiceTest {
         when(repositoryHead.allocateNextVersion(draftId)).thenReturn(newVersion);
         when(mapper.toEntity(dto, draftId, newVersion)).thenReturn(toSave);
         when(repository.save(toSave)).thenReturn(toSave);
-        when(repository.findById(draftId)).thenReturn(Optional.of(toSave));
+        when(repository.findFirstByKeyDraftIdOrderByKeyVersionDesc(draftId)).thenReturn(Optional.of(toSave));
 
-        long result = service.addDraftVersion(draftId, dto);
+        QuestionnaireDraftKeyDto result = service.addDraftVersion(draftId, dto);
 
-        assertThat(result).isEqualTo(newVersion);
-
+        assertThat(result.version()).isEqualTo(newVersion);
+        assertThat(result.draftId()).isEqualTo(draftId);
         verify(repositoryHead).allocateNextVersion(draftId);
         verify(repositoryHead).ensureHeadExists(draftId);
         verify(mapper).toEntity(dto, draftId, newVersion);
@@ -130,7 +133,7 @@ class QuestionnaireDraftServiceTest {
         assertThatThrownBy(() -> service.addDraftVersion(draftId, dto))
                 .isInstanceOf(EntityNotFoundException.class);
 
-        verify(repository).findById(draftId);
+        verify(repository).findFirstByKeyDraftIdOrderByKeyVersionDesc(draftId);
         verifyNoMoreInteractions(repositoryHead, repository, mapper);
     }
 
@@ -138,18 +141,18 @@ class QuestionnaireDraftServiceTest {
     void getDraft_whenFound_returnDto() {
         UUID id = UUID.randomUUID();
         QuestionnaireDraftEntity entity = new QuestionnaireDraftEntity();
+        entity.setKey(new QuestionnaireDraftKey(id, 1L));
         QuestionnaireRequestDto dto = new QuestionnaireRequestDto();
 
         when(repository.findByKeyDraftIdAndKeyVersion(id, 2L)).thenReturn(Optional.of(entity));
         when(mapper.toDto(entity)).thenReturn(dto);
 
-        QuestionnaireRequestDto result = service.getDraft(id, 2L);
+        QuestionnaireDraftDto result = service.getDraft(id, 2L);
 
-        assertThat(result).isSameAs(dto);
+        assertThat(result.payload()).isSameAs(dto);
         verify(repository).findByKeyDraftIdAndKeyVersion(id, 2L);
         verify(mapper).toDto(entity);
         verifyNoMoreInteractions(mapper, repository);
 
     }
-
 }

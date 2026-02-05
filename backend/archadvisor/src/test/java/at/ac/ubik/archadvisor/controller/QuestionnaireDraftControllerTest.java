@@ -1,5 +1,7 @@
 package at.ac.ubik.archadvisor.controller;
 
+import at.ac.ubik.archadvisor.DTO.QuestionnaireDraftDto;
+import at.ac.ubik.archadvisor.DTO.QuestionnaireDraftKeyDto;
 import at.ac.ubik.archadvisor.DTO.QuestionnaireRequestDto;
 import at.ac.ubik.archadvisor.domain.enums.*;
 import at.ac.ubik.archadvisor.service.QuestionnaireDraftService;
@@ -36,7 +38,7 @@ class QuestionnaireDraftControllerTest {
     @Test
     void createDraft_returns201_andUuid() throws Exception {
         UUID id = UUID.randomUUID();
-        when(draftService.createDraft(any(QuestionnaireRequestDto.class))).thenReturn(id);
+        when(draftService.createDraft(any(QuestionnaireRequestDto.class))).thenReturn(new QuestionnaireDraftKeyDto(id, 1));
 
         QuestionnaireRequestDto dto = new QuestionnaireRequestDto();
         dto.setArchitectureScope(ArchitectureScope.BACKEND_ONLY);
@@ -46,12 +48,12 @@ class QuestionnaireDraftControllerTest {
         dto.setPriorityAspects(List.of(PriorityAspect.PERFORMANCE, PriorityAspect.SCALABILITY));
         dto.setTopRankN(4);
 
-        mvc.perform(post("/api/questionnaire-drafts")
+        mvc.perform(post("/api/questionnaire-drafts/createDraft")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").value(id.toString()));
+                .andExpect(jsonPath("$.draftId").value(id.toString()));
 
         verify(draftService).createDraft(any(QuestionnaireRequestDto.class));
         verifyNoMoreInteractions(draftService);
@@ -74,20 +76,20 @@ class QuestionnaireDraftControllerTest {
         dto.setPriorityAspects(List.of(PriorityAspect.SECURITY, PriorityAspect.MAINTAINABILITY));
         dto.setTopRankN(5);
 
-        when(draftService.getLatestDraft(id)).thenReturn(dto);
+        when(draftService.getLatestDraft(id)).thenReturn(new QuestionnaireDraftDto(id, 1, dto));
 
-        mvc.perform(get("/api/questionnaire-drafts/{id}", id))
+        mvc.perform(get("/api/questionnaire-drafts/{id}/latest", id))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.architectureScope").value("FULL_STACK"))
-                .andExpect(jsonPath("$.openSource").value(true))
-                .andExpect(jsonPath("$.deploymentPreference").value("KUBERNETES"))
-                .andExpect(jsonPath("$.budgetTier").value("MEDIUM"))
-                .andExpect(jsonPath("$.expectedUsers").value(100))
-                .andExpect(jsonPath("$.serverlessFriendly").value(false))
-                .andExpect(jsonPath("$.teamSize").value(3))
-                .andExpect(jsonPath("$.experienceLevel").value("Beginner"))
-                .andExpect(jsonPath("$.topRankN").value(5));
+                .andExpect(jsonPath("$.payload.architectureScope").value("FULL_STACK"))
+                .andExpect(jsonPath("$.payload.openSource").value(true))
+                .andExpect(jsonPath("$.payload.deploymentPreference").value("KUBERNETES"))
+                .andExpect(jsonPath("$.payload.budgetTier").value("MEDIUM"))
+                .andExpect(jsonPath("$.payload.expectedUsers").value(100))
+                .andExpect(jsonPath("$.payload.serverlessFriendly").value(false))
+                .andExpect(jsonPath("$.payload.teamSize").value(3))
+                .andExpect(jsonPath("$.payload.experienceLevel").value("Beginner"))
+                .andExpect(jsonPath("$.payload.topRankN").value(5));
 
         verify(draftService).getLatestDraft(id);
         verifyNoMoreInteractions(draftService);
@@ -103,9 +105,9 @@ class QuestionnaireDraftControllerTest {
         dto.setServerlessFriendly(true);
         dto.setTopRankN(2);
 
-        when(draftService.addDraftVersion(eq(id), any(QuestionnaireRequestDto.class))).thenReturn(2L);
+        when(draftService.addDraftVersion(eq(id), any(QuestionnaireRequestDto.class))).thenReturn(new QuestionnaireDraftKeyDto(id, 2L));
 
-        mvc.perform(put("/api/questionnaire-drafts/{id}", id)
+        mvc.perform(put("/api/questionnaire-drafts/createDraftVersion/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(dto)))
                 .andExpect(status().isOk());
@@ -120,7 +122,7 @@ class QuestionnaireDraftControllerTest {
         when(draftService.getLatestDraft(id))
                 .thenThrow(new EntityNotFoundException("Questionnaire draft not found: " + id));
 
-        mvc.perform(get("/api/questionnaire-drafts/{id}", id))
+        mvc.perform(get("/api/questionnaire-drafts/{id}/latest", id))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("not found")));
 
@@ -145,20 +147,22 @@ class QuestionnaireDraftControllerTest {
         dto.setPriorityAspects(List.of(PriorityAspect.SECURITY, PriorityAspect.MAINTAINABILITY));
         dto.setTopRankN(5);
 
-        when(draftService.getDraft(id, 1L)).thenReturn(dto);
+        when(draftService.getDraft(id, 1L)).thenReturn(new QuestionnaireDraftDto(id, 2, dto));
 
         mvc.perform(get("/api/questionnaire-drafts/{id}/{versionNumber}", id, 1))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.architectureScope").value("FULL_STACK"))
-                .andExpect(jsonPath("$.openSource").value(true))
-                .andExpect(jsonPath("$.deploymentPreference").value("KUBERNETES"))
-                .andExpect(jsonPath("$.budgetTier").value("MEDIUM"))
-                .andExpect(jsonPath("$.expectedUsers").value(100))
-                .andExpect(jsonPath("$.serverlessFriendly").value(false))
-                .andExpect(jsonPath("$.teamSize").value(3))
-                .andExpect(jsonPath("$.experienceLevel").value("Beginner"))
-                .andExpect(jsonPath("$.topRankN").value(5));
+                .andExpect(jsonPath("$.draftId").value(id.toString()))
+                .andExpect(jsonPath("$.version").value(2))
+                .andExpect(jsonPath("$.payload.architectureScope").value("FULL_STACK"))
+                .andExpect(jsonPath("$.payload.openSource").value(true))
+                .andExpect(jsonPath("$.payload.deploymentPreference").value("KUBERNETES"))
+                .andExpect(jsonPath("$.payload.budgetTier").value("MEDIUM"))
+                .andExpect(jsonPath("$.payload.expectedUsers").value(100))
+                .andExpect(jsonPath("$.payload.serverlessFriendly").value(false))
+                .andExpect(jsonPath("$.payload.teamSize").value(3))
+                .andExpect(jsonPath("$.payload.experienceLevel").value("Beginner"))
+                .andExpect(jsonPath("$.payload.topRankN").value(5));
 
         verify(draftService).getDraft(id, 1L);
         verifyNoMoreInteractions(draftService);
