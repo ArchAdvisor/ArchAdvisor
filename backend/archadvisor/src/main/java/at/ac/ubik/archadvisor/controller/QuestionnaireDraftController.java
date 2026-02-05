@@ -30,18 +30,22 @@ public class QuestionnaireDraftController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<QuestionnaireRequestDto> getQuestionnaireDraft(@PathVariable UUID id) {
+    public ResponseEntity<QuestionnaireRequestDto> getLatestQuestionnaireDraft(@PathVariable UUID id) {
 
-        QuestionnaireRequestDto questionnaireResponseDto = questionnaireDraftService.getDraft(id);
+        QuestionnaireRequestDto questionnaireResponseDto = questionnaireDraftService.getLatestDraft(id);
         return new ResponseEntity<>(questionnaireResponseDto, HttpStatus.OK);
+    }
 
+    @GetMapping("/{id}/{versionNumber}")
+    public ResponseEntity<QuestionnaireRequestDto> getQuestionnaireDraft(@PathVariable UUID id, @PathVariable int versionNumber) {
+        QuestionnaireRequestDto questionnaireResponseDto = questionnaireDraftService.getDraft(id, versionNumber);
+        return new ResponseEntity<>(questionnaireResponseDto, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UUID> updateQuestionnaireDraft(@RequestBody QuestionnaireRequestDto dto, @PathVariable UUID id) {
-        questionnaireDraftService.updateDraft(id, dto);
-        return new ResponseEntity<>(id, HttpStatus.NO_CONTENT);
-
+    public ResponseEntity<Long> updateQuestionnaireDraft(@RequestBody QuestionnaireRequestDto dto, @PathVariable UUID id) {
+        long version = questionnaireDraftService.addDraftVersion(id, dto);
+        return ResponseEntity.ok(version);
     }
 
 }
