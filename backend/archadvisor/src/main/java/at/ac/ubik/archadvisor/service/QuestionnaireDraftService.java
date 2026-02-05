@@ -1,5 +1,7 @@
 package at.ac.ubik.archadvisor.service;
 
+import at.ac.ubik.archadvisor.DTO.QuestionnaireDraftDto;
+import at.ac.ubik.archadvisor.DTO.QuestionnaireDraftKeyDto;
 import at.ac.ubik.archadvisor.DTO.QuestionnaireRequestDto;
 import at.ac.ubik.archadvisor.infrastructure.persistence.entity.QuestionnaireDraftEntity;
 import at.ac.ubik.archadvisor.infrastructure.persistence.repository.QuestionnaireDraftHeadRepository;
@@ -25,42 +27,44 @@ public class QuestionnaireDraftService {
     }
 
     private void requireDraft(UUID id) {
-        questionnaireDraftRepository.findById(id)
+        questionnaireDraftRepository.findFirstByKeyDraftIdOrderByKeyVersionDesc(id)
                 .orElseThrow(() -> new EntityNotFoundException("Questionnaire draft not found: " + id));
     }
 
     @Transactional
-    public UUID createDraft(QuestionnaireRequestDto dto) {
+    public QuestionnaireDraftKeyDto createDraft(QuestionnaireRequestDto dto) {
         UUID uuid = UUID.randomUUID();
         questionnaireDraftHeadRepository.ensureHeadExists(uuid);
         long version = questionnaireDraftHeadRepository.allocateNextVersion(uuid);
         QuestionnaireDraftEntity questionnaireDraft = questionnaireDraftRepository.save(mapper.toEntity(dto, uuid, version));
-        return uuid;
+        return new QuestionnaireDraftKeyDto(uuid, version);
     }
 
     @Transactional()
-    public QuestionnaireRequestDto getLatestDraft(UUID draftId) {
+    public QuestionnaireDraftDto getLatestDraft(UUID draftId) {
         QuestionnaireDraftEntity e = questionnaireDraftRepository.findFirstByKeyDraftIdOrderByKeyVersionDesc(draftId)
                 .orElseThrow(() -> new EntityNotFoundException("Questionnaire draft not found: " + draftId));
-        return mapper.toDto(e);
+        QuestionnaireRequestDto questionnaireRequestDto = mapper.toDto(e);
+        return new QuestionnaireDraftDto(draftId, e.getKey().getVersion(), questionnaireRequestDto);
     }
 
     @Transactional
-    public QuestionnaireRequestDto getDraft(UUID draftId, long version) {
+    public QuestionnaireDraftDto getDraft(UUID draftId, long version) {
         QuestionnaireDraftEntity e = questionnaireDraftRepository.findByKeyDraftIdAndKeyVersion(draftId, version)
                 .orElseThrow(() -> new EntityNotFoundException("Questionnaire draft not found: " + draftId + " and version: " + version));
-        return mapper.toDto(e);
+        QuestionnaireRequestDto questionnaireRequestDto = mapper.toDto(e);
+        return new QuestionnaireDraftDto(draftId, e.getKey().getVersion(), questionnaireRequestDto);
 
     }
 
     @Transactional
-    public long addDraftVersion(UUID draftId, QuestionnaireRequestDto dto) {
+    public QuestionnaireDraftKeyDto addDraftVersion(UUID draftId, QuestionnaireRequestDto dto) {
         requireDraft(draftId);
         questionnaireDraftHeadRepository.ensureHeadExists(draftId);
 
         long version = questionnaireDraftHeadRepository.allocateNextVersion(draftId);
         questionnaireDraftRepository.save(mapper.toEntity(dto, draftId, version));
-        return version;
+        return new QuestionnaireDraftKeyDto(draftId, version);
     }
 
 }
