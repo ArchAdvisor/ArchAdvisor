@@ -52,7 +52,7 @@ public class FinalStackController {
             draftVersion = questionnaireDraftRepository.findFirstByKeyDraftIdOrderByKeyVersionDesc(UUID.fromString(draftId)).get().getKey().getVersion();
         } else {
             log.error("Could not find questionnaire draft id {}", draftId);
-            draftVersion = 1L;
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         if (draftLink == null) {
             log.warn("Draft link is null");
