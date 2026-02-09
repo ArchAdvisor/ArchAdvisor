@@ -45,7 +45,7 @@ public class FinalStackController {
         String draftLink = dto.getDraftLink();
         String draftId = dto.getDraftId();
         long draftVersion;
-        QuestionnaireRequestDto questionnaireRequestDto = null;
+        QuestionnaireRequestDto questionnaireRequestDto;
         if (questionnaireDraftRepository.findFirstByKeyDraftIdOrderByKeyVersionDesc(UUID.fromString(draftId)).isPresent()) {
             QuestionnaireDraftEntity questionnaireDraftEntity = questionnaireDraftRepository.findFirstByKeyDraftIdOrderByKeyVersionDesc(UUID.fromString(draftId)).get();
             questionnaireRequestDto = questionnaireDraftMapper.payloadToDto(questionnaireDraftEntity);
