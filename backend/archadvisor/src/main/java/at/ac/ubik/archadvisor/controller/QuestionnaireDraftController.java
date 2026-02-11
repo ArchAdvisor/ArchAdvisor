@@ -1,5 +1,7 @@
 package at.ac.ubik.archadvisor.controller;
 
+import at.ac.ubik.archadvisor.DTO.QuestionnaireDraftDto;
+import at.ac.ubik.archadvisor.DTO.QuestionnaireDraftKeyDto;
 import at.ac.ubik.archadvisor.DTO.QuestionnaireRequestDto;
 import at.ac.ubik.archadvisor.service.QuestionnaireDraftService;
 import org.slf4j.Logger;
@@ -23,25 +25,29 @@ public class QuestionnaireDraftController {
     }
 
 
-    @PostMapping
-    public ResponseEntity<UUID> saveQuestionnaireDraft(@RequestBody QuestionnaireRequestDto dto) {
-        UUID uuid = questionnaireDraftService.createDraft(dto);
-        return new ResponseEntity<>(uuid, HttpStatus.CREATED);
+    @PostMapping("/createDraft")
+    public ResponseEntity<QuestionnaireDraftKeyDto> saveQuestionnaireDraft(@RequestBody QuestionnaireRequestDto dto) {
+        QuestionnaireDraftKeyDto questionnaireDraftKeyDto = questionnaireDraftService.createDraft(dto);
+        return new ResponseEntity<>(questionnaireDraftKeyDto, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<QuestionnaireRequestDto> getQuestionnaireDraft(@PathVariable UUID id) {
+    @GetMapping("/{id}/latest")
+    public ResponseEntity<QuestionnaireDraftDto> getLatestQuestionnaireDraft(@PathVariable UUID id) {
 
-        QuestionnaireRequestDto questionnaireResponseDto = questionnaireDraftService.getDraft(id);
-        return new ResponseEntity<>(questionnaireResponseDto, HttpStatus.OK);
-
+        QuestionnaireDraftDto questionnaireDraftDto = questionnaireDraftService.getLatestDraft(id);
+        return new ResponseEntity<>(questionnaireDraftDto, HttpStatus.OK);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UUID> updateQuestionnaireDraft(@RequestBody QuestionnaireRequestDto dto, @PathVariable UUID id) {
-        questionnaireDraftService.updateDraft(id, dto);
-        return new ResponseEntity<>(id, HttpStatus.NO_CONTENT);
+    @GetMapping("/{id}/{versionNumber}")
+    public ResponseEntity<QuestionnaireDraftDto> getQuestionnaireDraft(@PathVariable UUID id, @PathVariable long versionNumber) {
+        QuestionnaireDraftDto questionnaireDraftDto = questionnaireDraftService.getDraft(id, versionNumber);
+        return new ResponseEntity<>(questionnaireDraftDto, HttpStatus.OK);
+    }
 
+    @PutMapping("/createDraftVersion/{id}")
+    public ResponseEntity<QuestionnaireDraftKeyDto> updateQuestionnaireDraft(@RequestBody QuestionnaireRequestDto dto, @PathVariable UUID id) {
+        QuestionnaireDraftKeyDto questionnaireDraftKeyDto = questionnaireDraftService.addDraftVersion(id, dto);
+        return ResponseEntity.ok(questionnaireDraftKeyDto);
     }
 
 }

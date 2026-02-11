@@ -101,6 +101,8 @@ type QuestionnaireResponse = {
     mobileFrameworks: any[] | null;
 };
 
+type DraftKey = { draftId: string; version: number };
+
 function QuestionnaireForm() {
     const [form, setForm] = useState<QuestionnaireRequest>({
         project_name: "",
@@ -170,7 +172,7 @@ function QuestionnaireForm() {
             const newIndex = index + direction;
 
             if (newIndex < 0 || newIndex >= arr.length) {
-                return prev; // out of bounds, no change
+                return prev;
             }
 
             // swap positions
@@ -183,30 +185,50 @@ function QuestionnaireForm() {
     };
 
     const navigate = useNavigate();
-    const { draftId } = useParams<{ draftId: string }>();
-    const [effectiveDraftId, setEffectiveDraftId] = useState<string | null>(draftId ?? null);
+    const { draftId, version } = useParams<{ draftId: string, version?: string }>();
 
-    useEffect(() => {
-        if (draftId) setEffectiveDraftId(draftId);
-    }, [draftId]);
+    const [currentDraft, setCurrentDraft] = useState<{ draftId: string; version: number } | null>(null);
+
     // base URL for printing / sharing
-    const draftLink = useMemo(() => {
-        if (!effectiveDraftId) return null;
-        return `${window.location.origin}/draft/${effectiveDraftId}`;
-    }, [effectiveDraftId]);
+    const draftApiLink = useMemo(() => {
+        if (!draftId) return null;
 
+        return version
+            ? `/api/questionnaire-drafts/${draftId}/${version}`
+            : `/api/questionnaire-drafts/${draftId}/latest`;
+    }, [draftId, version]);
+
+    const draftLink = useMemo(() => {
+        const dId = currentDraft?.draftId ?? draftId;
+        const ver = currentDraft?.version ?? (version ? Number(version) : null);
+
+        if (!dId) return null;
+        return ver != null
+            ? `${window.location.origin}/draft/${dId}/${ver}`
+            : `${window.location.origin}/draft/${dId}/latest`;
+    }, [draftId, version, currentDraft]);
     useEffect(() => {
-        if (!draftId) return;
+        console.log("Draft API link:", draftApiLink);
+        if (!draftApiLink) {
+            console.log("No draftId in URL, starting with blank form");
+            return;
+        }
+        const controller = new AbortController();
 
         (async () => {
             try {
                 setError(null);
                 setLoading(true);
 
-                const res = await fetch(`/api/questionnaire-drafts/${draftId}`);
+                const res = await fetch(draftApiLink);
+
                 if (!res.ok) {
+                    if (res.status === 404) {
+                        throw new Error("Draft not found.");
+                    }
                     throw new Error(`Failed to load draft (${res.status})`);
                 }
+
 
                 const dto = await res.json();
 
@@ -215,30 +237,33 @@ function QuestionnaireForm() {
                 // frontend: deploymentPreference, expectedUsers, teamProgrammingLanguages
                 const loaded: QuestionnaireRequest = {
                     ...formDefaults,
-                    architectureScope: dto.architectureScope ?? formDefaults.architectureScope,
-                    deploymentPreference: dto.deploymentPreference ?? dto.deploymentPreferences ?? null,
-                    budgetTier: dto.budgetTier ?? null,
-                    isOpenSource: dto.openSource ?? dto.isOpenSource ?? false,
-                    isServerlessFriendly: dto.serverlessFriendly ?? dto.isServerlessFriendly ?? false,
-                    expectedUsers: dto.expectedUsers ?? dto.expectedNumberOfUsers ?? null,
-                    teamSize: dto.teamSize ?? 0,
-                    experienceLevel: dto.experienceLevel ?? "",
-                    teamProgrammingLanguages: dto.teamProgrammingLanguages ?? dto.programmingLanguages ?? [],
-                    priorityAspects: dto.priorityAspects ?? formDefaults.priorityAspects,
-                    topRankN: dto.topRankN ?? formDefaults.topRankN,
-                    project_name: dto.projectName ?? "",
+                    architectureScope: dto.payload.architectureScope ?? formDefaults.architectureScope,
+                    deploymentPreference: dto.payload.deploymentPreference ?? dto.payload.deploymentPreferences ?? null,
+                    budgetTier: dto.payload.budgetTier ?? null,
+                    isOpenSource: dto.payload.openSource ?? dto.payload.isOpenSource ?? false,
+                    isServerlessFriendly: dto.payload.serverlessFriendly ?? dto.payload.isServerlessFriendly ?? false,
+                    expectedUsers: dto.payload.expectedUsers ?? dto.payload.expectedNumberOfUsers ?? null,
+                    teamSize: dto.payload.teamSize ?? 0,
+                    experienceLevel: dto.payload.experienceLevel ?? "",
+                    teamProgrammingLanguages: dto.payload.teamProgrammingLanguages ?? dto.payload.programmingLanguages ?? [],
+                    priorityAspects: dto.payload.priorityAspects ?? formDefaults.priorityAspects,
+                    topRankN: dto.payload.topRankN ?? formDefaults.topRankN,
+                    project_name: dto.payload.projectName ?? "",
                 };
 
                 setForm(loaded);
             } catch (e: any) {
-                setError(e?.message ?? "Could not load draft");
+                if (e.name !== "AbortError") setError(e?.message ?? "Could not load draft");
             } finally {
                 setLoading(false);
             }
         })();
-    }, [draftId]);
+        return () => controller.abort();
+    }, [draftApiLink, navigate, version]);
 
-    const saveDraft = async (): Promise<string> => {
+
+
+    const saveDraft = async (): Promise<DraftKey> => {
         const payload = {
             projectName: form.project_name,
             architectureScope: form.architectureScope,
@@ -255,8 +280,8 @@ function QuestionnaireForm() {
         };
 
         if (draftId) {
-            // update
-            const res = await fetch(`/api/questionnaire-drafts/${draftId}`, {
+            // update should create new version of a draft
+            const res = await fetch(`/api/questionnaire-drafts/createDraftVersion/${draftId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -266,10 +291,10 @@ function QuestionnaireForm() {
                 throw new Error(`Failed to update draft (${res.status})`);
             }
 
-            return draftId;
+            return await res.json();
         } else {
-            // create
-            const res = await fetch("/api/questionnaire-drafts", {
+            // create new draft, starting with version 1
+            const res = await fetch("/api/questionnaire-drafts/createDraft", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -278,10 +303,7 @@ function QuestionnaireForm() {
             if (!res.ok) {
                 throw new Error(`Failed to create draft (${res.status})`);
             }
-
-            // backend returns JSON string uuid: "...."
-            const newId: string = await res.json();
-            return newId;
+            return await res.json();
         }
     };
 
@@ -292,13 +314,14 @@ function QuestionnaireForm() {
         setResult(null);
 
         try {
-            const savedId = await saveDraft();
-            setEffectiveDraftId(savedId);
+            const saved = await saveDraft();
+            setCurrentDraft(saved);
+
             // if it was created, move user to /draft/:id so they have the shareable link
             if (!draftId) {
-                navigate(`/draft/${savedId}`, { replace: true });
+                navigate(`/draft/${saved.draftId}/${saved.version}`, { replace: true });
             }
-            const link = `${window.location.origin}/draft/${savedId}`;
+            const link = `${window.location.origin}/draft/${saved.draftId}/${saved.version}`;
             var body = JSON.stringify({
                 projectName: form.project_name,
                 architectureScope: form.architectureScope,
@@ -326,7 +349,7 @@ function QuestionnaireForm() {
             }
 
             const data: QuestionnaireResponse = await response.json();
-            navigate("/results", { state: { result: data, draftLink: link, draftId: savedId } });
+            navigate("/results", { state: { result: data, draftLink: link, draftId: saved.draftId } });
         } catch (err: any) {
             console.error(err);
             setError(err.message ?? "Unknown error");
@@ -345,6 +368,9 @@ function QuestionnaireForm() {
         return form.teamProgrammingLanguages.map((l) => map[l]);
     }, [form.teamProgrammingLanguages]);
 
+    if (error) {
+        return <div className="error-message">Error: {error}</div>;
+    }
     return (
         <Box>
             {draftLink && (
