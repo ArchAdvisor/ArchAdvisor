@@ -51,7 +51,7 @@ class DocumentCreatorTest {
         assertTrue(pdf.length > 500, "PDF should not be tiny/empty");
 
         try (PDDocument doc = PDDocument.load(new ByteArrayInputStream(pdf))) {
-            assertEquals(2, doc.getNumberOfPages());
+            assertEquals(3, doc.getNumberOfPages());
 
             String text = new PDFTextStripper().getText(doc);
 
