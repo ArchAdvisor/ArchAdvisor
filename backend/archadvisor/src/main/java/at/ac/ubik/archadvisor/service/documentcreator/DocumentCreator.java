@@ -35,6 +35,7 @@ public class DocumentCreator {
     private static final String PRODUCT_NAME = "Archadvisor";
     private static final String LOGO_RESOURCE = "/favicon-32x32.png";
     private static final String NOT_SPECIFIED = "Not specified";
+
     private static String normalizeUrl(String url) {
         if (url == null) return null;
         String cleaned = url.trim().replaceAll("\\p{Cntrl}", "");
@@ -58,129 +59,10 @@ public class DocumentCreator {
         return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
     }
 
-    public byte[] createStackPdf(
-            FinalStackRequestDto finalStack,
-            String backendName,
-            String frontendName,
-            String databaseName,
-            String mobileName,
-            QuestionnaireRequestDto questionnaire,
-            long questionnaireVersion
-    ) throws Exception {
-
-        try (PDDocument doc = new PDDocument();
-             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-
-            PDPage page1 = new PDPage();
-            doc.addPage(page1);
-
-            try (PDPageContentStream cs = new PDPageContentStream(doc, page1)) {
-                String generatedAt = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z"));
-                float y = drawHeader(doc, page1, cs, PRODUCT_NAME, "Generated " + generatedAt);
-
-                y = writeHeading(cs, questionnaire.getProjectName() + " – Recommended Stack" + " (v" + questionnaireVersion + ")", y);
-
-                if (notBlank(finalStack.getAuthorName())) {
-                    y = writeKeyValue(cs, page1, "Author", finalStack.getAuthorName(), y);
-                }
-                if (notBlank(finalStack.getOrganization())) {
-                    y = writeKeyValue(cs, page1, "Organization", finalStack.getOrganization(), y);
-                }
-
-                if (notBlank(finalStack.getDraftLink())) {
-                    y = writeClickableLink(page1, cs, "Draft link", finalStack.getDraftLink(), y);
-                }
-
-                if (notBlank(finalStack.getDraftId())) {
-                    y = writeKeyValue(cs, page1, "Draft ID", finalStack.getDraftId(), y);
-                }
-
-                if (notBlank(finalStack.getNotes())) {
-                    y -= 6;
-                    y = writeSubheading(cs, "Notes", y);
-                    y = writeWrapped(cs, page1, finalStack.getNotes(), y);
-                }
-
-                y -= 10;
-                y = writeSubheading(cs, "Scope and components", y);
-
-                String scope = (finalStack.getArchitectureScope() != null)
-                        ? finalStack.getArchitectureScope().name()
-                        : NOT_SPECIFIED;
-
-                y = writeKeyValue(cs, page1, "Architecture scope", makeArchitectureScopeReadable(scope), y);
-
-                if (notBlank(backendName)) y = writeKeyValue(cs, page1, "Backend", backendName, y);
-                if (notBlank(frontendName)) y = writeKeyValue(cs, page1, "Frontend", frontendName, y);
-                if (notBlank(databaseName)) y = writeKeyValue(cs, page1, "Database", databaseName, y);
-                if (notBlank(mobileName)) y = writeKeyValue(cs, page1, "Mobile", mobileName, y);
-            }
-
-            //Page 2 (Questionnaire)
-            if (questionnaire != null) {
-                PDPage page2 = new PDPage();
-                doc.addPage(page2);
-
-                try (PDPageContentStream cs2 = new PDPageContentStream(doc, page2)) {
-                    float y2 = drawHeader(doc, page2, cs2, PRODUCT_NAME, "");
-                    y2 = writeHeading(cs2, "Questionnaire (copy)", y2);
-
-                    y2 = writeKeyValue(cs2, page2, "Architecture scope",
-                            questionnaire.getArchitectureScope() != null
-                                    ? humanizeEnum(questionnaire.getArchitectureScope().name())
-                                    : NOT_SPECIFIED,
-                            y2);
-
-                    y2 = writeKeyValue(cs2, page2, "Use only Open source-technologies", String.valueOf(questionnaire.isOpenSource()), y2);
-
-                    y2 = writeKeyValue(cs2, page2, "Deployment preference",
-                            questionnaire.getDeploymentPreference() != null
-                                    ? humanizeEnum(questionnaire.getDeploymentPreference().name())
-                                    : NOT_SPECIFIED,
-                            y2);
-                    if (needsBudgetTier(questionnaire.getDeploymentPreference())) {
-                        y2 = writeKeyValue(cs2, page2, "Budget tier",
-                                questionnaire.getBudgetTier() != null
-                                        ? humanizeEnum(questionnaire.getBudgetTier().name())
-                                        : NOT_SPECIFIED,
-                                y2);
-                    }
-                    y2 = writeKeyValue(cs2, page2, "Expected users",
-                            questionnaire.getExpectedUsers() != null
-                                    ? questionnaire.getExpectedUsers().toString()
-                                    : NOT_SPECIFIED,
-                            y2);
-
-                    y2 = writeKeyValue(cs2, page2, "Serverless-friendly",
-                            String.valueOf(questionnaire.isServerlessFriendly()), y2);
-
-                    y2 = writeKeyValue(cs2, page2, "Team size",
-                            questionnaire.getTeamSize() != null
-                                    ? questionnaire.getTeamSize().toString()
-                                    : NOT_SPECIFIED,
-                            y2);
-
-                    y2 = writeKeyValue(cs2, page2, "Experience level",
-                            safe(questionnaire.getExperienceLevel()), y2);
-
-                    if (questionnaire.getProgrammingLanguages() != null && !questionnaire.getProgrammingLanguages().isEmpty()) {
-                        String languages = questionnaire.getProgrammingLanguages().stream()
-                                .map(pl -> humanizeEnum(pl.name()))
-                                .sorted()
-                                .collect(Collectors.joining(", "));
-                        y2 = writeKeyValue(cs2, page2, "Programming languages", languages, y2);
-                    }
-
-                    if (questionnaire.getPriorityAspects() != null && !questionnaire.getPriorityAspects().isEmpty()) {
-                        y2 = writeRankedList(cs2, page2, "Priority aspects (ranked)", questionnaire.getPriorityAspects(), y2);
-                    }
-
-                }
-            }
-            addPageNumbers(doc);
-            doc.save(out);
-            return out.toByteArray();
-        }
+    public static String getDraftLinkForSpecificVersion(String baseLink, String version) {
+        int lastIndex = baseLink.lastIndexOf('/');
+        String cleanLink = baseLink.substring(0, lastIndex + 1);
+        return cleanLink + version;
     }
 
     private float drawHeader(
@@ -408,5 +290,170 @@ public class DocumentCreator {
         }
 
         return y;
+    }
+
+    public byte[] createStackPdf(
+            FinalStackRequestDto finalStack,
+            String backendName,
+            String frontendName,
+            String databaseName,
+            String mobileName,
+            QuestionnaireRequestDto questionnaire,
+            long currentQuestionnaireVersion
+    ) throws Exception {
+
+        try (PDDocument doc = new PDDocument();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            PDPage page1 = new PDPage();
+            doc.addPage(page1);
+
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page1)) {
+                String generatedAt = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm z"));
+                float y = drawHeader(doc, page1, cs, PRODUCT_NAME, "Generated " + generatedAt);
+
+                y = writeHeading(cs, questionnaire.getProjectName() + " – Recommended Stack" + " (v" + currentQuestionnaireVersion + ")", y);
+
+                if (notBlank(finalStack.getAuthorName())) {
+                    y = writeKeyValue(cs, page1, "Author", finalStack.getAuthorName(), y);
+                }
+                if (notBlank(finalStack.getOrganization())) {
+                    y = writeKeyValue(cs, page1, "Organization", finalStack.getOrganization(), y);
+                }
+
+                if (notBlank(finalStack.getDraftLink())) {
+                    y = writeClickableLink(page1, cs, "Draft link", finalStack.getDraftLink(), y);
+                }
+
+                if (notBlank(finalStack.getDraftId())) {
+                    y = writeKeyValue(cs, page1, "Draft ID", finalStack.getDraftId(), y);
+                }
+
+                if (notBlank(finalStack.getNotes())) {
+                    y -= 6;
+                    y = writeSubheading(cs, "Notes", y);
+                    y = writeWrapped(cs, page1, finalStack.getNotes(), y);
+                }
+
+                y -= 10;
+                y = writeSubheading(cs, "Scope and components", y);
+
+                String scope = (finalStack.getArchitectureScope() != null)
+                        ? finalStack.getArchitectureScope().name()
+                        : NOT_SPECIFIED;
+
+                y = writeKeyValue(cs, page1, "Architecture scope", makeArchitectureScopeReadable(scope), y);
+
+                if (notBlank(backendName)) y = writeKeyValue(cs, page1, "Backend", backendName, y);
+                if (notBlank(frontendName)) y = writeKeyValue(cs, page1, "Frontend", frontendName, y);
+                if (notBlank(databaseName)) y = writeKeyValue(cs, page1, "Database", databaseName, y);
+                if (notBlank(mobileName)) y = writeKeyValue(cs, page1, "Mobile", mobileName, y);
+            }
+
+            //Page 2 (Questionnaire)
+            if (questionnaire != null) {
+                PDPage page2 = new PDPage();
+                doc.addPage(page2);
+
+                try (PDPageContentStream cs2 = new PDPageContentStream(doc, page2)) {
+                    float y2 = drawHeader(doc, page2, cs2, PRODUCT_NAME, "");
+                    y2 = writeHeading(cs2, "Questionnaire (copy)", y2);
+
+                    y2 = writeKeyValue(cs2, page2, "Architecture scope",
+                            questionnaire.getArchitectureScope() != null
+                                    ? humanizeEnum(questionnaire.getArchitectureScope().name())
+                                    : NOT_SPECIFIED,
+                            y2);
+
+                    y2 = writeKeyValue(cs2, page2, "Use only Open source-technologies", String.valueOf(questionnaire.isOpenSource()), y2);
+
+                    y2 = writeKeyValue(cs2, page2, "Deployment preference",
+                            questionnaire.getDeploymentPreference() != null
+                                    ? humanizeEnum(questionnaire.getDeploymentPreference().name())
+                                    : NOT_SPECIFIED,
+                            y2);
+                    if (needsBudgetTier(questionnaire.getDeploymentPreference())) {
+                        y2 = writeKeyValue(cs2, page2, "Budget tier",
+                                questionnaire.getBudgetTier() != null
+                                        ? humanizeEnum(questionnaire.getBudgetTier().name())
+                                        : NOT_SPECIFIED,
+                                y2);
+                    }
+                    y2 = writeKeyValue(cs2, page2, "Expected users",
+                            questionnaire.getExpectedUsers() != null
+                                    ? questionnaire.getExpectedUsers().toString()
+                                    : NOT_SPECIFIED,
+                            y2);
+
+                    y2 = writeKeyValue(cs2, page2, "Serverless-friendly",
+                            String.valueOf(questionnaire.isServerlessFriendly()), y2);
+
+                    y2 = writeKeyValue(cs2, page2, "Team size",
+                            questionnaire.getTeamSize() != null
+                                    ? questionnaire.getTeamSize().toString()
+                                    : NOT_SPECIFIED,
+                            y2);
+
+                    y2 = writeKeyValue(cs2, page2, "Experience level",
+                            safe(questionnaire.getExperienceLevel()), y2);
+
+                    if (questionnaire.getProgrammingLanguages() != null && !questionnaire.getProgrammingLanguages().isEmpty()) {
+                        String languages = questionnaire.getProgrammingLanguages().stream()
+                                .map(pl -> humanizeEnum(pl.name()))
+                                .sorted()
+                                .collect(Collectors.joining(", "));
+                        y2 = writeKeyValue(cs2, page2, "Programming languages", languages, y2);
+                    }
+
+                    if (questionnaire.getPriorityAspects() != null && !questionnaire.getPriorityAspects().isEmpty()) {
+                        y2 = writeRankedList(cs2, page2, "Priority aspects (ranked)", questionnaire.getPriorityAspects(), y2);
+                    }
+
+                }
+            }
+
+            //Create page 3 for listing all previous versions
+            PDPage page3 = new PDPage();
+            doc.addPage(page3);
+
+            PDPageContentStream cs3 = new PDPageContentStream(doc, page3);
+            float y3 = drawHeader(doc, page3, cs3, PRODUCT_NAME, "");
+            y3 = writeHeading(cs3, "Previous versions of this draft:", y3);
+
+            if (currentQuestionnaireVersion > 1) {
+
+                y3 -= 10;
+
+                for (int counter = 1; counter < currentQuestionnaireVersion; counter++) {
+
+                    if (y3 < 80) {
+                        cs3.close();
+
+                        page3 = new PDPage();
+                        doc.addPage(page3);
+                        cs3 = new PDPageContentStream(doc, page3);
+
+                        y3 = drawHeader(doc, page3, cs3, PRODUCT_NAME, "");
+                    }
+
+                    String label = "Version " + counter;
+                    String link = getDraftLinkForSpecificVersion(finalStack.getDraftLink(), Integer.toString(counter));
+                    y3 = writeClickableLink(page3, cs3, label, link, y3);
+
+                    y3 -= 10;
+                    counter++;
+                }
+
+            } else {
+                y3 = writeWrapped(cs3, page3, "No previous versions available.", y3);
+            }
+
+            cs3.close();
+
+
+            addPageNumbers(doc);
+            doc.save(out);
+            return out.toByteArray();
+        }
     }
 }
