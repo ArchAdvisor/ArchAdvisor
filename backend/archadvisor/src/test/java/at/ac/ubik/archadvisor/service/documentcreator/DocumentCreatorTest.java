@@ -160,4 +160,18 @@ class DocumentCreatorTest {
             assertTrue(text.contains("Budget tier"), "This deploymentMode should contain a Budget Tier");
         }
     }
+
+    @Test
+    void getDraftLinkForSpecificVersion_for_singleDigitVersion() {
+        String draftLink = "http://localhost:3000/draft/6d29a6ec-02d2-4e78-97ea-6a779bc01eb4/1";
+        String resultingLink = DocumentCreator.getDraftLinkForSpecificVersion(draftLink, "5");
+        assertEquals("http://localhost:3000/draft/6d29a6ec-02d2-4e78-97ea-6a779bc01eb4/5", resultingLink);
+    }
+
+    @Test
+    void getDraftLinkForSpecificVersion_for_twoDigitsVersion() {
+        String draftLink = "http://localhost:3000/draft/6d29a6ec-02d2-4e78-97ea-6a779bc01eb4/10";
+        String resultingLink = DocumentCreator.getDraftLinkForSpecificVersion(draftLink, "11");
+        assertEquals("http://localhost:3000/draft/6d29a6ec-02d2-4e78-97ea-6a779bc01eb4/11", resultingLink);
+    }
 }
